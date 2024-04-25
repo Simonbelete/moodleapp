@@ -49,13 +49,11 @@ export function createTranslateLoader(http: HttpClient): TranslateHttpLoader {
     imports: [
         BrowserModule,
         BrowserAnimationsModule,
-        IonicModule.forRoot(
-            {
-                navAnimation: moodleTransitionAnimation,
-                innerHTMLTemplatesEnabled: true,
-                sanitizerEnabled: true,
-            },
-        ),
+        IonicModule.forRoot({
+            navAnimation: moodleTransitionAnimation,
+            innerHTMLTemplatesEnabled: true,
+            sanitizerEnabled: true,
+        }),
         HttpClientModule, // HttpClient is used to make JSON requests. It fails for HEAD requests because there is no content.
         TranslateModule.forRoot({
             loader: {

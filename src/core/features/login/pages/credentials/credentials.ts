@@ -82,7 +82,8 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
         try {
             this.siteCheck = CoreNavigator.getRouteParam<CoreSiteCheckResponse>('siteCheck');
 
-            const siteUrl = this.siteCheck?.siteUrl || CoreNavigator.getRequiredRouteParam<string>('siteUrl');
+            // this.siteCheck?.siteUrl || CoreNavigator.getRequiredRouteParam<string>('siteUrl');
+            const siteUrl = 'https://tpgs.ilri.org/dea';
             if (this.siteCheck?.config) {
                 this.siteConfig = this.siteCheck.config;
             }
