@@ -25,8 +25,11 @@ import { Router } from '@singletons';
  * @returns True if user has sites, redirect route otherwise.
  */
 export const authGuard: CanActivateFn = async () => {
+
+    // First time opening and the default lanaguage is not set redirect to language selection.
     if (!CoreSites.isLoggedIn()) {
-        return Router.parseUrl('/login');
+        // return Router.parseUrl('/login');
+        return Router.parseUrl('/language');
     }
 
     if (CoreLoginHelper.isSiteLoggedOut()) {

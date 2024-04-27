@@ -1,0 +1,22 @@
+<ion-header class="core-language-header">
+    <ion-toolbar>
+        <img slot="start" src="assets/img/top_logo.png" role="presentation" alt="">
+        <ion-title slot="end">
+            <h1>{{ 'core.language.selectlanguage' | translate }}</h1>
+        </ion-title>
+    </ion-toolbar>
+</ion-header>
+
+<ion-content>
+    <ion-radio-group [(ngModel)]="selectedLanguage" (ionChange)="languageChanged($event)">
+        <ion-item class="ion-text-wrap" *ngFor="let entry of languages">
+            <ion-radio [value]="entry.code">
+                <core-format-text [text]="entry.name" />
+            </ion-radio>
+        </ion-item>
+    </ion-radio-group>
+
+    <ion-button expand="block" fill="clear" (click)="getStartedClick()">
+        {{ 'core.language.getstarted' | translate }}
+    </ion-button>
+</ion-content>
