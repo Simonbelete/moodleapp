@@ -28,8 +28,8 @@ export const authGuard: CanActivateFn = async () => {
 
     // First time opening and the default lanaguage is not set redirect to language selection.
     if (!CoreSites.isLoggedIn()) {
-        // return Router.parseUrl('/login');
-        return Router.parseUrl('/language');
+        return Router.parseUrl('/login');
+        // return Router.parseUrl('/language');
     }
 
     if (CoreLoginHelper.isSiteLoggedOut()) {
