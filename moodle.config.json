@@ -25,7 +25,13 @@
         "high": 120
     },
     "customurlscheme": "moodlemobile",
-    "sites": ["tpgs.ilri.org/dea"],
+    "sites": [
+        {
+            "name": "DEA",
+            "url": "https://tpgs.ilri.org/dea",
+            "staging": false
+        }
+    ],
     "multisitesdisplay": "",
     "sitefindersettings": {},
     "onlyallowlistedsites": true,
@@ -60,5 +66,6 @@
             "font-awesome": ["fam"],
             "moodle": ["moodle"]
         }
-    }
+    },
+    "hideInformativeLinks": true
 }

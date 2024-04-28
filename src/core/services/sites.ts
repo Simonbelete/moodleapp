@@ -1091,6 +1091,10 @@ export class CoreSitesProvider {
      * @returns Whether the user is logged in a site.
      */
     isLoggedIn(): boolean {
+
+        this.logger.log('Current site ' + this.currentSite);
+        this.logger.log('Token ' + this.currentSite?.token);
+
         return this.currentSite !== undefined && this.currentSite.token !== undefined &&
             this.currentSite.token != '';
     }
