@@ -29,7 +29,8 @@
         {
             "name": "DEA",
             "url": "https://tpgs.ilri.org/dea",
-            "staging": false
+            "staging": false,
+            "imageurl": "https://tpgs.ilri.org/_next/image?url=%2Fimages%2Filri_logo.png&w=1920&q=100"
         }
     ],
     "multisitesdisplay": "",
