@@ -18,6 +18,7 @@ import { CoreApp } from '@services/app';
 
 import { CoreSites } from '@services/sites';
 import { Router } from '@singletons';
+import { CoreLogger } from '@singletons/logger';
 
 /**
  * Guard to check if the user is authenticated.
@@ -25,6 +26,8 @@ import { Router } from '@singletons';
  * @returns True if user has sites, redirect route otherwise.
  */
 export const authGuard: CanActivateFn = async () => {
+
+    CoreLogger.getInstance('CanActivateFn').log('Main menu auth log');
 
     // First time opening and the default lanaguage is not set redirect to language selection.
     if (!CoreSites.isLoggedIn()) {

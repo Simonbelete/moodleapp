@@ -40,12 +40,18 @@ export class AppComponent implements OnInit, AfterViewInit {
 
     protected logger = CoreLogger.getInstance('AppComponent');
 
+    constructor(){
+        this.logger.log('App constructor');
+    }
+
     /**
      * @inheritdoc
      */
     ngOnInit(): void {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const win = <any> window;
+
+        this.logger.log('App ngOnInit');
 
         CorePlatform.resume.subscribe(() => {
             // Wait a second before setting it to false since in iOS there could be some frozen WS calls.
