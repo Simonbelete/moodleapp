@@ -45,8 +45,7 @@
     "postinstall": "patch-package && cd cordova-plugin-moodleapp && npm install",
     "lang:update-langpacks": "./scripts/update_langpacks.sh",
     "lang:detect-langpacks": "./scripts/update_langpacks.sh detect",
-    "lang:create-langindex": "./scripts/create_langindex.sh",
-    "resource:android": "ionic cordova resources android"
+    "lang:create-langindex": "./scripts/create_langindex.sh"
   },
   "dependencies": {
     "@angular/animations": "~10.0.14",
