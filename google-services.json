@@ -1,42 +1,26 @@
 {
   "project_info": {
-    "project_number": "",
-    "firebase_url": "",
-    "project_id": "",
-    "storage_bucket": ""
+    "project_number": "644698351606",
+    "project_id": "deas-d4921",
+    "storage_bucket": "deas-d4921.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:111111111111:android:1111111111111111",
+        "mobilesdk_app_id": "1:644698351606:android:8e5908d7f7010b388d09d7",
         "android_client_info": {
-          "package_name": "com.moodle.moodlemobile"
+          "package_name": "com.ilri.tpgs.deas"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": ""
-        },
-        {
-          "current_key": ""
+          "current_key": "AIzaSyAfLKZmMToOr_M_XG-6zXycSEllrmS-jo4"
         }
       ],
       "services": {
-        "analytics_service": {
-          "status": 1
-        },
         "appinvite_service": {
-          "status": 1,
           "other_platform_oauth_client": []
-        },
-        "ads_service": {
-          "status": 2
         }
       }
     }

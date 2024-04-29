@@ -44,7 +44,8 @@ export class CoreMainMenuAuthGuard implements CanLoad, CanActivate {
      */
     private async guard(): Promise<true | UrlTree> {
         if (!CoreSites.isLoggedIn()) {
-            return Router.parseUrl('/login');
+            // return Router.parseUrl('/login');
+            return Router.parseUrl('/language');
         }
 
         if (CoreLoginHelper.isSiteLoggedOut()) {

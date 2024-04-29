@@ -18,14 +18,17 @@
     }
   ],
   "scripts": {
+    "local": "ionic cordova run android -l -c --external --verbose",
     "ng": "ng",
-    "start": "ionic serve --browser=$MOODLE_APP_BROWSER",
+    "start": "ionic serve --browser=$MOODLE_APP_BROWSER --verbose",
     "serve:test": "NODE_ENV=testing ionic serve --no-open",
     "build": "ionic build",
     "build:prod": "NODE_ENV=production ionic build --prod",
     "build:test": "NODE_ENV=testing ionic build --configuration=testing",
-    "dev:android": "concurrently \"npm run dev:android:app\" \"npm run dev:android:cordova\"",
-    "dev:android:app": "ionic cordova run android --livereload --external --ssl",
+    "release:android": "NODE_ENV=production ionic cordova build android --prod",
+    "dev:android": "concurrently \"npm run dev:android:app2\" \"npm run dev:android:cordova\"",
+    "dev:android:app": "ionic cordova run android --livereload --external --ssl --verbose",
+    "dev:android:app2": "ionic cordova run android -l -c --external --verbose",
     "dev:android:cordova": "npm run dev --prefix cordova-plugin-moodleapp",
     "dev:ios": "ionic cordova run ios",
     "prod:android": "npm run prod --prefix cordova-plugin-moodleapp && NODE_ENV=production ionic cordova run android --prod",
@@ -42,7 +45,8 @@
     "postinstall": "patch-package && cd cordova-plugin-moodleapp && npm install",
     "lang:update-langpacks": "./scripts/update_langpacks.sh",
     "lang:detect-langpacks": "./scripts/update_langpacks.sh detect",
-    "lang:create-langindex": "./scripts/create_langindex.sh"
+    "lang:create-langindex": "./scripts/create_langindex.sh",
+    "resource:android": "ionic cordova resources android"
   },
   "dependencies": {
     "@angular/animations": "~10.0.14",

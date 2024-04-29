@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="43001" id="com.moodle.moodlemobile" ios-CFBundleVersion="4.3.0.1" version="4.3.0" versionCode="43001" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Moodle</name>
-    <description>Moodle official app</description>
+<widget android-versionCode="43001" id="com.ilri.tpgs.deas" ios-CFBundleVersion="4.3.0.1" version="4.3.0" versionCode="43001" xmlns="http://www.w3.org/ns/widgets" xmlns:android="http://schemas.android.com/apk/res/android" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>ILRI TPGS - DEAS</name>
+    <description>Digital Extension and Advisory Services app</description>
     <author email="mobile@moodle.com" href="http://moodle.com">Moodle Mobile team</author>
     <content src="index.html" />
     <access origin="*" />
@@ -635,4 +635,6 @@
             </array>
         </config-file>
     </platform>
+    <allow-navigation href="https://192.168.43.1:8100" sessionid="be518913" />
+    <allow-navigation href="http://192.168.43.1:8100" sessionid="c2300a0a" />
 </widget>
