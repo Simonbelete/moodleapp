@@ -3,7 +3,7 @@
     <name>ILRI TPGS - DEAS</name>
     <description>Digital Extension and Advisory Services app</description>
     <author email="mobile@moodle.com" href="http://moodle.com">Moodle Mobile team</author>
-    <content src="index.html" />
+    <content original-src="index.html" src="http://192.168.52.1:8100" />
     <access origin="*" />
     <access launch-external="yes" origin="tel:*" />
     <access launch-external="yes" origin="mailto:*" />
@@ -59,8 +59,8 @@
     </feature>
     <platform name="android">
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/android/android-splash.xml" />
-        <preference name="AndroidWindowSplashScreenBackground" value="#FFFFFF" />
-        <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#FFFFFF" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#993832" />
+        <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#993832" />
         <resource-file src="MainActivity.java" target="app/src/main/java/com/moodle/moodlemobile/MainActivity.java" />
         <resource-file src="google-services.json" target="app/google-services.json" />
         <resource-file src="resources/android/icon/drawable-ldpi-smallicon.png" target="app/src/main/res/mipmap-ldpi/smallicon.png" />
@@ -637,4 +637,5 @@
         </config-file>
     </platform>
     <allow-navigation href="https://192.168.43.1:8100" sessionid="be518913" />
+    <allow-navigation href="http://192.168.52.1:8100" sessionid="25fcc025" />
 </widget>
