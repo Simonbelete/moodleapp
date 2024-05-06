@@ -9,15 +9,14 @@
     "cache_update_frequency_rarely": 43200000,
     "default_lang": "en",
     "languages": {
+        "am": " አማርኛ",
         "en": "English",
-        "vi": "Vietnamese",
-        "sw": "kiswahili",
-        "am": "አማርኛ",
-        "kh": "Khmer"
+        "km": "ខ្មែរ",
+        "sw": "Kiswahili",
+        "vi": "Vietnamese"
     },
     "wsservice": "moodle_mobile_app",
-    "demo_sites": {
-    },
+    "demo_sites": {},
     "defaultZoomLevel": "none",
     "zoomlevels": {
         "none": 100,

@@ -25,7 +25,7 @@
     "build": "ionic build",
     "build:prod": "NODE_ENV=production ionic build --prod",
     "build:test": "NODE_ENV=testing ionic build --configuration=testing",
-    "release:android": "NODE_ENV=production ionic cordova build android --prod",
+    "release:android": "npm run build && cordova build android --release -- --packageType=apk",
     "dev:android": "concurrently \"npm run dev:android:app2\" \"npm run dev:android:cordova\"",
     "dev:android:app": "ionic cordova run android --livereload --external --ssl --verbose",
     "dev:android:app2": "ionic cordova run android -l -c --external --verbose",
@@ -134,6 +134,7 @@
     "ts-md5": "^1.2.7",
     "tslib": "^2.3.1",
     "video.js": "^7.21.1",
+    "winston": "=2.4.6",
     "zone.js": "~0.10.3"
   },
   "devDependencies": {
