@@ -18,6 +18,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 import { CoreCoursesCourseListItemComponent } from './course-list-item/course-list-item';
 import { CoreCoursesCourseProgressComponent } from './course-progress/course-progress';
 import { CoreCoursesCourseOptionsMenuComponent } from './course-options-menu/course-options-menu';
+import { CategoryCardComponent } from './category-card/category-card';
 
 @NgModule({
     declarations: [
@@ -25,6 +26,7 @@ import { CoreCoursesCourseOptionsMenuComponent } from './course-options-menu/cou
         // eslint-disable-next-line deprecation/deprecation
         CoreCoursesCourseProgressComponent,
         CoreCoursesCourseOptionsMenuComponent,
+        CategoryCardComponent,
     ],
     imports: [
         CoreSharedModule,
@@ -34,6 +36,7 @@ import { CoreCoursesCourseOptionsMenuComponent } from './course-options-menu/cou
         // eslint-disable-next-line deprecation/deprecation
         CoreCoursesCourseProgressComponent,
         CoreCoursesCourseOptionsMenuComponent,
+        CategoryCardComponent,
     ],
 })
 export class CoreCoursesComponentsModule {}

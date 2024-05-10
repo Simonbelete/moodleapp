@@ -20,7 +20,7 @@ import { CoreCourse, CoreCourseWSSection } from '@features/course/services/cours
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSites } from '@services/sites';
 import { CoreSiteHome } from '@features/sitehome/services/sitehome';
-import { CoreCourses } from '@features//courses/services/courses';
+import { CoreCategoryData, CoreCourses, CoreCoursesProvider } from '@features//courses/services/courses';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
@@ -48,6 +48,8 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
         hasContent?: boolean;
     };
 
+    showOnlyEnrolled = false;
+
     hasContent = false;
     hasBlocks = false;
     items: string[] = [];
@@ -55,11 +57,28 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
     currentSite!: CoreSite;
     searchEnabled = false;
     newsForumModule?: CoreCourseModuleData;
+    categories: CoreCategoryData[] = [];
+    categoriesLoaded = false;
+    currentCategory?: CoreCategoryData;
 
     protected updateSiteObserver: CoreEventObserver;
     protected logView: () => void;
+    protected myCoursesObserver: CoreEventObserver;
+    protected categoryId = 0;
 
     constructor(protected route: ActivatedRoute) {
+
+        // Update list if user enrols in a course.
+        this.myCoursesObserver = CoreEvents.on(
+            CoreCoursesProvider.EVENT_MY_COURSES_UPDATED,
+            (data) => {
+                if (data.action == CoreCoursesProvider.ACTION_ENROL) {
+                    this.fetchCategories();
+                }
+            },
+
+        );
+
         // Refresh the enabled flags if site is updated.
         this.updateSiteObserver = CoreEvents.on(CoreEvents.SITE_UPDATED, () => {
             this.searchEnabled = !CoreCourses.isSearchCoursesDisabledInSite();
@@ -95,6 +114,10 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
 
         this.loadContent().finally(() => {
             this.dataLoaded = true;
+        });
+
+        this.fetchCategories().finally(() => {
+            this.categoriesLoaded = true;
         });
 
         this.openFocusedInstance();
@@ -176,6 +199,7 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
         }));
 
         promises.push(CoreCourse.invalidateCourseBlocks(this.siteHomeId));
+        promises.push(CoreCourses.invalidateCategories(this.categoryId, true));
 
         if (this.section && this.section.modules) {
             // Invalidate modules prefetch data.
@@ -184,6 +208,10 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
 
         Promise.all(promises).finally(async () => {
             await this.loadContent().finally(() => {
+                refresher?.complete();
+            });
+
+            await this.fetchCategories().finally(() => {
                 refresher?.complete();
             });
         });
@@ -240,6 +268,42 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
                 },
             });
         }
+    }
+
+    /**
+     * Fetch the categories.
+     *
+     * @returns Promise resolved when done.
+     */
+    protected async fetchCategories(): Promise<void> {
+        try {
+            const categories: CoreCategoryData[] = await CoreCourses.getCategories(this.categoryId, true);
+
+            this.currentCategory = undefined;
+
+            const index = categories.findIndex((category) => category.id == this.categoryId);
+
+            if (index >= 0) {
+                this.currentCategory = categories[index];
+                // Delete current Category to avoid problems with the formatTree.
+                delete categories[index];
+            }
+
+            // Sort by depth and sortorder to avoid problems formatting Tree.
+            categories.sort((a, b) => {
+                if (a.depth == b.depth) {
+                    return (a.sortorder > b.sortorder) ? 1 : ((b.sortorder > a.sortorder) ? -1 : 0);
+                }
+
+                return a.depth > b.depth ? 1 : -1;
+            });
+
+            console.log('AAAAAAA', categories);
+
+            this.categories = CoreUtils.formatTree(categories, 'parent', 'id', this.categoryId);
+
+            this.logView();
+        } catch (error) { /* empty */ }
     }
 
 }

@@ -38,6 +38,17 @@
                 </ion-label>
             </ion-item>
 
+            <ng-container *ngIf="courses.length > 0">
+                <ion-item-divider>
+                    <ion-label>
+                        <h2 *ngIf="!showOnlyEnrolled" class="big">{{ 'core.courses.courses' | translate }}</h2>
+                        <h2 *ngIf="showOnlyEnrolled" class="big">{{ 'core.courses.mycourses' | translate }}</h2>
+                    </ion-label>
+                </ion-item-divider>
+                <core-courses-course-list-item *ngFor="let course of courses" [course]="course" [showDownload]="downloadEnabled"
+                    layout="card" />
+            </ng-container>
+
             <ng-container *ngIf="categories.length > 0">
                 <ion-item-divider>
                     <ion-label>
@@ -61,15 +72,6 @@
                 </ion-card>
             </ng-container>
 
-            <ng-container *ngIf="courses.length > 0">
-                <ion-item-divider>
-                    <ion-label>
-                        <h2 *ngIf="!showOnlyEnrolled" class="big">{{ 'core.courses.courses' | translate }}</h2>
-                        <h2 *ngIf="showOnlyEnrolled" class="big">{{ 'core.courses.mycourses' | translate }}</h2>
-                    </ion-label>
-                </ion-item-divider>
-                <core-courses-course-list-item *ngFor="let course of courses" [course]="course" [showDownload]="downloadEnabled" />
-            </ng-container>
         </ion-list>
         <core-empty-box *ngIf="!categories.length && !courses.length" icon="fas-graduation-cap"
             [message]="'core.courses.nocoursesyet' | translate" />
