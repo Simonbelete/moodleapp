@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit, Input, ViewChild, ElementRef } from '@angular/core';
-import { ActionSheetButton, IonRefresher } from '@ionic/angular';
+import { ActionSheetButton } from '@ionic/angular';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -72,6 +72,8 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
     courseUrl = '';
     progress?: number;
     courseMenuHandlers: CoreCourseOptionsMenuHandlerToDisplay[] = [];
+    displayOpenInBrowser = false;
+    isTeacher = false;
 
     protected actionSheet?: HTMLIonActionSheetElement;
     protected waitStart = 0;
@@ -137,6 +139,7 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
         const currentSiteUrl = CoreSites.getRequiredCurrentSite().getURL();
         this.enrolUrl = CorePath.concatenatePaths(currentSiteUrl, 'enrol/index.php?id=' + this.courseId);
         this.courseUrl = CorePath.concatenatePaths(currentSiteUrl, 'course/view.php?id=' + this.courseId);
+        this.displayOpenInBrowser = CoreSites.getRequiredCurrentSite().shouldDisplayInformativeLinks();
 
         await this.getCourse();
     }
@@ -169,6 +172,9 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
         }
 
         await this.loadMenuHandlers(refresh);
+
+        // After loading menu handlers, admOptions should be available.
+        this.isTeacher = await CoreUtils.ignoreErrors(CoreCourseHelper.guessIsTeacher(this.courseId, this.course), false);
 
         this.dataLoaded = true;
     }
@@ -252,7 +258,7 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
      * @returns Promise resolved when done.
      */
     protected async loadMenuHandlers(refresh?: boolean): Promise<void> {
-        if (!this.course) {
+        if (!this.course || !this.canAccessCourse) {
             return;
         }
 
@@ -400,7 +406,7 @@ export class CoreCourseSummaryPage implements OnInit, OnDestroy {
      *
      * @param refresher The refresher if this was triggered by a Pull To Refresh.
      */
-    async refreshData(refresher?: IonRefresher): Promise<void> {
+    async refreshData(refresher?: HTMLIonRefresherElement): Promise<void> {
         const promises: Promise<void>[] = [];
 
         promises.push(CoreCourses.invalidateUserCourses());

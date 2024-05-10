@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreSwipeSlidesItemsManager } from '@classes/items-management/swipe-slides-items-manager';
@@ -24,7 +24,6 @@ import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModulePrefetchDelegate } from '@features/course/services/module-prefetch-delegate';
 import { CoreTag, CoreTagItem } from '@features/tag/services/tag';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -53,7 +52,7 @@ import { CoreUrlUtils } from '@services/utils/url';
 })
 export class AddonModBookContentsPage implements OnInit, OnDestroy {
 
-    @ViewChild(CoreSwipeSlidesComponent) slides?: CoreSwipeSlidesComponent;
+    @ViewChild(CoreSwipeSlidesComponent) swipeSlidesComponent?: CoreSwipeSlidesComponent;
 
     title = '';
     cmId!: number;
@@ -64,7 +63,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
     warning = '';
     displayNavBar = true;
     navigationItems: CoreNavigationBarItem<AddonModBookTocChapter>[] = [];
-    slidesOpts: CoreSwipeSlidesOptions = {
+    swiperOpts: CoreSwipeSlidesOptions = {
         autoHeight: true,
         observer: true,
         observeParents: true,
@@ -179,7 +178,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
         // Get module status to determine if it needs to be downloaded.
         const status = await CoreCourseModulePrefetchDelegate.getModuleStatus(module, this.courseId, undefined, refresh);
 
-        if (status !== CoreConstants.DOWNLOADED) {
+        if (status !== DownloadStatus.DOWNLOADED) {
             // Download content. This function also loads module contents if needed.
             try {
                 await CoreCourseModulePrefetchDelegate.downloadModule(module, this.courseId);
@@ -223,7 +222,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
             return;
         }
 
-        this.slides?.slideToItem({ id: chapterId });
+        this.swipeSlidesComponent?.slideToItem({ id: chapterId });
     }
 
     /**
@@ -232,7 +231,7 @@ export class AddonModBookContentsPage implements OnInit, OnDestroy {
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
         if (this.manager) {
             await CoreUtils.ignoreErrors(Promise.all([
                 this.manager.getSource().invalidateContent(),

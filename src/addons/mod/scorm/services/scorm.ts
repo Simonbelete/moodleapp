@@ -12,10 +12,10 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreFilepool } from '@services/filepool';
@@ -31,6 +31,7 @@ import { CoreEvents } from '@singletons/events';
 import { CorePath } from '@singletons/path';
 import { AddonModScormOffline } from './scorm-offline';
 import { AddonModScormAutoSyncEventData, AddonModScormSyncProvider } from './scorm-sync';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 // Private constants.
 const VALID_STATUSES = ['notattempted', 'passed', 'completed', 'failed', 'incomplete', 'browsed', 'suspend'];
@@ -336,7 +337,7 @@ export class AddonModScormProvider {
 
                 const re = /^(\d+)\*\{(.+)\}$/; // Sets like 3*{S34, S36, S37, S39}.
                 const reOther = /^(.+)(=|<>)(.+)$/; // Other symbols.
-                let matches = element.match(re);
+                const matches = element.match(re);
 
                 if (matches) {
                     const repeat = Number(matches[1]);
@@ -362,18 +363,18 @@ export class AddonModScormProvider {
                     element = '!';
                 } else if (reOther.test(element)) {
                     // Other symbols = | <> .
-                    matches = element.match(reOther) ?? [];
-                    element = matches[1]?.trim();
+                    const otherMatches = element.match(reOther) ?? [];
+                    element = otherMatches[1]?.trim();
 
                     if (trackData[element] !== undefined) {
-                        let value = matches[3].trim().replace(/('|")/gi, '');
+                        let value = otherMatches[3].trim().replace(/('|")/gi, '');
                         let oper: string;
 
                         if (STATUSES[value] !== undefined) {
                             value = STATUSES[value];
                         }
 
-                        if (matches[2] == '<>') {
+                        if (otherMatches[2] == '<>') {
                             oper = '!=';
                         } else {
                             oper = '==';
@@ -1668,8 +1669,8 @@ export class AddonModScormProvider {
                 return false;
             }
 
-            const isOutdated = data.status == CoreConstants.OUTDATED ||
-                    (data.status == CoreConstants.DOWNLOADING && data.previous == CoreConstants.OUTDATED);
+            const isOutdated = data.status === DownloadStatus.OUTDATED ||
+                    (data.status === DownloadStatus.DOWNLOADING && data.previous === DownloadStatus.OUTDATED);
 
             // Package needs to be downloaded if it's not outdated (not downloaded) or if the hash has changed.
             return !isOutdated || data.extra != scorm.sha1hash;

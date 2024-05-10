@@ -15,10 +15,9 @@
 import { Injectable } from '@angular/core';
 import { HttpResponse, HttpParams, HttpErrorResponse } from '@angular/common/http';
 
-import { FileEntry } from '@ionic-native/file/ngx';
-import { FileUploadOptions, FileUploadResult } from '@ionic-native/file-transfer/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { Md5 } from 'ts-md5/dist/md5';
-import { Observable } from 'rxjs';
+import { Observable, firstValueFrom } from 'rxjs';
 import { timeout } from 'rxjs/operators';
 
 import { CoreNativeToAngularHttpResponse } from '@classes/native-to-angular-http';
@@ -29,13 +28,13 @@ import { CoreTextErrorObject, CoreTextUtils } from '@services/utils/text';
 import { CoreConstants } from '@/core/constants';
 import { CoreError } from '@classes/errors/error';
 import { CoreInterceptor } from '@classes/interceptor';
-import { makeSingleton, Translate, FileTransfer, Http, NativeHttp } from '@singletons';
+import { makeSingleton, Translate, Http, NativeHttp } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreWSError } from '@classes/errors/wserror';
 import { CoreAjaxError } from '@classes/errors/ajaxerror';
 import { CoreAjaxWSError } from '@classes/errors/ajaxwserror';
 import { CoreNetworkError } from '@classes/errors/network-error';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreHttpError } from '@classes/errors/httperror';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
@@ -43,6 +42,7 @@ import { CoreSiteError, CoreSiteErrorOptions } from '@classes/errors/siteerror';
 import { CoreUserGuestSupportConfig } from '@features/user/classes/support/guest-support-config';
 import { CoreSites } from '@services/sites';
 import { CoreLang, CoreLangFormat } from './lang';
+import { CoreErrorLogs } from '@singletons/error-logs';
 
 /**
  * This service allows performing WS calls and download/upload files.
@@ -253,14 +253,25 @@ export class CoreWSProvider {
             // Create the tmp file as an empty file.
             const fileEntry = await CoreFile.createFile(tmpPath);
 
-            const transfer = FileTransfer.create();
-            onProgress && transfer.onProgress(onProgress);
+            const transfer = new window.FileTransfer();
+
+            if (onProgress) {
+                transfer.onprogress = onProgress;
+            }
 
             // Download the file in the tmp file.
-            await transfer.download(url, fileEntry.toURL(), true, {
-                headers: {
-                    'User-Agent': navigator.userAgent, // eslint-disable-line @typescript-eslint/naming-convention
-                },
+            const fileDownloaded = await new Promise<{
+                entry: globalThis.FileEntry;
+                headers: Record<string, string> | undefined;
+            }>((resolve, reject) => {
+                transfer.download(
+                    url,
+                    CoreFile.getFileEntryURL(fileEntry),
+                    (result) => resolve(result),
+                    (error: FileTransferError) => reject(error),
+                    true,
+                    { headers: { 'User-Agent': navigator.userAgent } },
+                );
             });
 
             let extension = '';
@@ -270,8 +281,10 @@ export class CoreWSProvider {
 
                 // Google Drive extensions will be considered invalid since Moodle usually converts them.
                 if (!extension || ['gdoc', 'gsheet', 'gslides', 'gdraw', 'php'].includes(extension)) {
+
                     // Not valid, get the file's mimetype.
-                    const mimetype = await this.getRemoteFileMimeType(url);
+                    const requestContentType = fileDownloaded.headers?.['Content-Type']?.split(';')[0];
+                    const mimetype = requestContentType ?? await this.getRemoteFileMimeType(url);
 
                     if (mimetype) {
                         const remoteExtension = CoreMimetypeUtils.getExtension(mimetype, url);
@@ -412,9 +425,25 @@ export class CoreWSProvider {
         let promise: Promise<HttpResponse<any>>;
 
         if (preSets.siteUrl === undefined) {
-            throw new CoreAjaxError(Translate.instant('core.unexpectederror'));
+            const unexpectedError = new CoreAjaxError(Translate.instant('core.unexpectederror'));
+            CoreErrorLogs.addErrorLog({
+                method,
+                type: 'CoreAjaxError',
+                message: Translate.instant('core.unexpectederror'),
+                time: new Date().getTime(),
+                data,
+            });
+            throw unexpectedError;
         } else if (!CoreNetwork.isOnline()) {
-            throw new CoreAjaxError(Translate.instant('core.networkerrormsg'));
+            const networkError = new CoreAjaxError(Translate.instant('core.networkerrormsg'));
+            CoreErrorLogs.addErrorLog({
+                method,
+                type: 'CoreAjaxError',
+                message: Translate.instant('core.networkerrormsg'),
+                time: new Date().getTime(),
+                data,
+            });
+            throw networkError;
         }
 
         if (preSets.responseExpected === undefined) {
@@ -468,10 +497,12 @@ export class CoreWSProvider {
                 throw new CoreAjaxError({
                     message,
                     supportConfig: await CoreUserGuestSupportConfig.forSite(preSets.siteUrl),
-                    errorcode: 'invalidresponse',
-                    errorDetails: Translate.instant('core.serverconnection', {
-                        details: Translate.instant('core.errorinvalidresponse', { method }),
-                    }),
+                    debug: {
+                        code: 'invalidresponse',
+                        details: Translate.instant('core.serverconnection', {
+                            details: Translate.instant('core.errorinvalidresponse', { method }),
+                        }),
+                    },
                 });
             } else if (data.error) {
                 throw new CoreAjaxWSError(data);
@@ -498,60 +529,82 @@ export class CoreWSProvider {
             if (CorePlatform.isMobile()) {
                 switch (data.status) {
                     case NativeHttp.ErrorCode.SSL_EXCEPTION:
-                        options.errorcode = 'invalidcertificate';
-                        options.errorDetails = Translate.instant('core.certificaterror', {
-                            details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Invalid certificate',
-                        });
+                        options.debug = {
+                            code: 'invalidcertificate',
+                            details: Translate.instant('core.certificaterror', {
+                                details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Invalid certificate',
+                            }),
+                        };
                         break;
                     case NativeHttp.ErrorCode.SERVER_NOT_FOUND:
-                        options.errorcode = 'servernotfound';
-                        options.errorDetails = CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Server could not be found';
+                        options.debug = {
+                            code: 'servernotfound',
+                            details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Server could not be found',
+                        };
                         break;
                     case NativeHttp.ErrorCode.TIMEOUT:
-                        options.errorcode = 'requesttimeout';
-                        options.errorDetails = CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Request timed out';
+                        options.debug = {
+                            code: 'requesttimeout',
+                            details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Request timed out',
+                        };
                         break;
                     case NativeHttp.ErrorCode.UNSUPPORTED_URL:
-                        options.errorcode = 'unsupportedurl';
-                        options.errorDetails = CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Url not supported';
+                        options.debug = {
+                            code: 'unsupportedurl',
+                            details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Url not supported',
+                        };
                         break;
                     case NativeHttp.ErrorCode.NOT_CONNECTED:
-                        options.errorcode = 'connectionerror';
-                        options.errorDetails = CoreTextUtils.getErrorMessageFromError(data.error)
-                            ?? 'Connection error, is network available?';
+                        options.debug = {
+                            code: 'connectionerror',
+                            details: CoreTextUtils.getErrorMessageFromError(data.error)
+                                ?? 'Connection error, is network available?',
+                        };
                         break;
                     case NativeHttp.ErrorCode.ABORTED:
-                        options.errorcode = 'requestaborted';
-                        options.errorDetails = CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Request aborted';
+                        options.debug = {
+                            code: 'requestaborted',
+                            details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Request aborted',
+                        };
                         break;
                     case NativeHttp.ErrorCode.POST_PROCESSING_FAILED:
-                        options.errorcode = 'requestprocessingfailed';
-                        options.errorDetails = CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Request processing failed';
+                        options.debug = {
+                            code: 'requestprocessingfailed',
+                            details: CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Request processing failed',
+                        };
                         break;
                 }
             }
 
-            if (!options.errorcode) {
+            if (!options.debug) {
                 switch (data.status) {
                     case 404:
-                        options.errorcode = 'endpointnotfound';
-                        options.errorDetails = Translate.instant('core.ajaxendpointnotfound', {
-                            $a: CoreSite.MINIMUM_MOODLE_VERSION,
-                        });
+                        options.debug = {
+                            code: 'endpointnotfound',
+                            details: Translate.instant('core.ajaxendpointnotfound', {
+                                $a: CoreSite.MINIMUM_MOODLE_VERSION,
+                            }),
+                        };
                         break;
                     default: {
                         const details = CoreTextUtils.getErrorMessageFromError(data.error) ?? 'Unknown error';
 
-                        options.errorcode = 'serverconnectionajax';
-                        options.errorDetails = Translate.instant('core.serverconnection', {
-                            details: `[Response status code: ${data.status}] ${details}`,
-                        });
+                        options.debug = {
+                            code: 'serverconnectionajax',
+                            details: Translate.instant('core.serverconnection', {
+                                details: `[Response status code: ${data.status}] ${details}`,
+                            }),
+                        };
                     }
                         break;
                 }
             }
 
             throw new CoreAjaxError(options, 1, data.status);
+        }).catch(error => {
+            const type = `CoreAjaxError - ${error.errorcode}`;
+            CoreErrorLogs.addErrorLog({ method, type, message: error, time: new Date().getTime(), data });
+            throw error;
         });
     }
 
@@ -670,7 +723,7 @@ export class CoreWSProvider {
         const requestUrl = siteUrl + '&wsfunction=' + method;
 
         // Perform the post request.
-        const promise = Http.post(requestUrl, ajaxData, options).pipe(timeout(this.getRequestTimeout())).toPromise();
+        const promise = firstValueFrom(Http.post(requestUrl, ajaxData, options).pipe(timeout(this.getRequestTimeout())));
 
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         return promise.then(async (data: any) => {
@@ -683,10 +736,12 @@ export class CoreWSProvider {
 
             if (!data) {
                 throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                    errorcode: 'serverconnectionpost',
-                    errorDetails: Translate.instant('core.serverconnection', {
-                        details: Translate.instant('core.errorinvalidresponse', { method }),
-                    }),
+                    debug: {
+                        code: 'serverconnectionpost',
+                        details: Translate.instant('core.serverconnection', {
+                            details: Translate.instant('core.errorinvalidresponse', { method }),
+                        }),
+                    },
                 });
             } else if (typeof data !== typeExpected) {
                 // If responseType is text an string will be returned, parse before returning.
@@ -697,8 +752,10 @@ export class CoreWSProvider {
                             this.logger.warn(`Response expected type "${typeExpected}" cannot be parsed to number`);
 
                             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                                errorcode: 'invalidresponse',
-                                errorDetails: Translate.instant('core.errorinvalidresponse', { method }),
+                                debug: {
+                                    code: 'invalidresponse',
+                                    details: Translate.instant('core.errorinvalidresponse', { method }),
+                                },
                             });
                         }
                     } else if (typeExpected === 'boolean') {
@@ -710,24 +767,30 @@ export class CoreWSProvider {
                             this.logger.warn(`Response expected type "${typeExpected}" is not true or false`);
 
                             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                                errorcode: 'invalidresponse',
-                                errorDetails: Translate.instant('core.errorinvalidresponse', { method }),
+                                debug: {
+                                    code: 'invalidresponse',
+                                    details: Translate.instant('core.errorinvalidresponse', { method }),
+                                },
                             });
                         }
                     } else {
                         this.logger.warn('Response of type "' + typeof data + `" received, expecting "${typeExpected}"`);
 
                         throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                            errorcode: 'invalidresponse',
-                            errorDetails: Translate.instant('core.errorinvalidresponse', { method }),
+                            debug: {
+                                code: 'invalidresponse',
+                                details: Translate.instant('core.errorinvalidresponse', { method }),
+                            },
                         });
                     }
                 } else {
                     this.logger.warn('Response of type "' + typeof data + `" received, expecting "${typeExpected}"`);
 
                     throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                        errorcode: 'invalidresponse',
-                        errorDetails: Translate.instant('core.errorinvalidresponse', { method }),
+                        debug: {
+                            code: 'invalidresponse',
+                            details: Translate.instant('core.errorinvalidresponse', { method }),
+                        },
                     });
                 }
             }
@@ -770,10 +833,12 @@ export class CoreWSProvider {
                 return retryPromise;
             } else if (error.status === -2) {
                 throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                    errorcode: 'invalidcertificate',
-                    errorDetails: Translate.instant('core.certificaterror', {
-                        details: CoreTextUtils.getErrorMessageFromError(error) ?? 'Unknown error',
-                    }),
+                    debug: {
+                        code: 'invalidcertificate',
+                        details: Translate.instant('core.certificaterror', {
+                            details: CoreTextUtils.getErrorMessageFromError(error) ?? 'Unknown error',
+                        }),
+                    },
                 });
             } else if (error.status > 0) {
                 throw this.createHttpError(error, error.status);
@@ -782,6 +847,15 @@ export class CoreWSProvider {
             throw new CoreError(Translate.instant('core.serverconnection', {
                 details: CoreTextUtils.getErrorMessageFromError(error) ?? 'Unknown error',
             }));
+        }).catch(err => {
+            CoreErrorLogs.addErrorLog({
+                method,
+                type: String(err),
+                message: String(err.exception),
+                time: new Date().getTime(),
+                data: ajaxData,
+            });
+            throw err;
         });
     }
 
@@ -847,71 +921,84 @@ export class CoreWSProvider {
      */
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     syncCall<T = unknown>(method: string, data: any, preSets: CoreWSPreSets): T {
-        if (!preSets) {
-            throw new CoreError(Translate.instant('core.unexpectederror'));
-        } else if (!CoreNetwork.isOnline()) {
-            throw new CoreNetworkError();
+        try {
+            if (!preSets) {
+                throw new CoreError(Translate.instant('core.unexpectederror'));
+            } else if (!CoreNetwork.isOnline()) {
+                throw new CoreNetworkError();
+            }
+
+            preSets.typeExpected = preSets.typeExpected || 'object';
+            if (preSets.responseExpected === undefined) {
+                preSets.responseExpected = true;
+            }
+
+            data = this.convertValuesToString(data || {}, preSets.cleanUnicode);
+            if (data == null) {
+                // Empty cleaned text found.
+                throw new CoreError(Translate.instant('core.unicodenotsupportedcleanerror'));
+            }
+
+            data.wsfunction = method;
+            data.wstoken = preSets.wsToken;
+            const siteUrl = preSets.siteUrl + '/webservice/rest/server.php?moodlewsrestformat=json';
+
+            // Serialize data.
+            data = CoreInterceptor.serialize(data);
+
+            // Perform sync request using XMLHttpRequest.
+            const xhr = new XMLHttpRequest();
+            xhr.open('post', siteUrl, false);
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
+
+            xhr.send(data);
+
+            // Get response.
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
+            data = ('response' in xhr) ? xhr.response : (<any> xhr).responseText;
+
+            // Check status.
+            const status = Math.max(xhr.status === 1223 ? 204 : xhr.status, 0);
+            if (status < 200 || status >= 300) {
+                // Request failed.
+                throw new CoreError(data);
+            }
+
+            // Treat response.
+            data = CoreTextUtils.parseJSON(data);
+
+            // Some moodle web services return null.
+            // If the responseExpected value is set then so long as no data is returned, we create a blank object.
+            if ((!data || !data.data) && !preSets.responseExpected) {
+                data = {};
+            }
+
+            if (!data) {
+                throw new CoreError(Translate.instant('core.serverconnection', {
+                    details: Translate.instant('core.errorinvalidresponse', { method }),
+                }));
+            } else if (typeof data != preSets.typeExpected) {
+                this.logger.warn('Response of type "' + typeof data + '" received, expecting "' + preSets.typeExpected + '"');
+                throw new CoreError(Translate.instant('core.errorinvalidresponse', { method }));
+            }
+
+            if (data.exception !== undefined || data.debuginfo !== undefined) {
+                throw new CoreWSError(data);
+            }
+
+            return data;
+        } catch (err) {
+            let errorType = '';
+
+            if (err instanceof CoreError) {
+                errorType = 'CoreError';
+            } else if (err instanceof CoreWSError) {
+                errorType = 'CoreWSError';
+            }
+
+            CoreErrorLogs.addErrorLog({ method, type: errorType, message: String(err), time: new Date().getTime(), data });
+            throw err;
         }
-
-        preSets.typeExpected = preSets.typeExpected || 'object';
-        if (preSets.responseExpected === undefined) {
-            preSets.responseExpected = true;
-        }
-
-        data = this.convertValuesToString(data || {}, preSets.cleanUnicode);
-        if (data == null) {
-            // Empty cleaned text found.
-            throw new CoreError(Translate.instant('core.unicodenotsupportedcleanerror'));
-        }
-
-        data.wsfunction = method;
-        data.wstoken = preSets.wsToken;
-        const siteUrl = preSets.siteUrl + '/webservice/rest/server.php?moodlewsrestformat=json';
-
-        // Serialize data.
-        data = CoreInterceptor.serialize(data);
-
-        // Perform sync request using XMLHttpRequest.
-        const xhr = new XMLHttpRequest();
-        xhr.open('post', siteUrl, false);
-        xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded;charset=utf-8');
-
-        xhr.send(data);
-
-        // Get response.
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        data = ('response' in xhr) ? xhr.response : (<any> xhr).responseText;
-
-        // Check status.
-        const status = Math.max(xhr.status === 1223 ? 204 : xhr.status, 0);
-        if (status < 200 || status >= 300) {
-            // Request failed.
-            throw new CoreError(data);
-        }
-
-        // Treat response.
-        data = CoreTextUtils.parseJSON(data);
-
-        // Some moodle web services return null.
-        // If the responseExpected value is set then so long as no data is returned, we create a blank object.
-        if ((!data || !data.data) && !preSets.responseExpected) {
-            data = {};
-        }
-
-        if (!data) {
-            throw new CoreError(Translate.instant('core.serverconnection', {
-                details: Translate.instant('core.errorinvalidresponse', { method }),
-            }));
-        } else if (typeof data != preSets.typeExpected) {
-            this.logger.warn('Response of type "' + typeof data + '" received, expecting "' + preSets.typeExpected + '"');
-            throw new CoreError(Translate.instant('core.errorinvalidresponse', { method }));
-        }
-
-        if (data.exception !== undefined || data.debuginfo !== undefined) {
-            throw new CoreWSError(data);
-        }
-
-        return data;
     }
 
     /*
@@ -940,9 +1027,11 @@ export class CoreWSProvider {
         }
 
         const uploadUrl = preSets.siteUrl + '/webservice/upload.php';
-        const transfer = FileTransfer.create();
+        const transfer = new window.FileTransfer();
 
-        onProgress && transfer.onProgress(onProgress);
+        if (onProgress) {
+            transfer.onprogress = onProgress;
+        }
 
         options.httpMethod = 'POST';
         options.params = {
@@ -952,14 +1041,15 @@ export class CoreWSProvider {
         };
         options.chunkedMode = false;
         options.headers = {
-            'User-Agent': navigator.userAgent, // eslint-disable-line @typescript-eslint/naming-convention
+            'User-Agent': navigator.userAgent,
         };
         options['Connection'] = 'close';
 
         let success: FileUploadResult;
 
         try {
-            success = await transfer.upload(filePath, uploadUrl, options, true);
+            success = await new Promise((resolve, reject) =>
+                transfer.upload( filePath, uploadUrl, (result) => resolve(result), (error) => reject(error), options, true));
         } catch (error) {
             this.logger.error('Error while uploading file', filePath, error);
 
@@ -975,24 +1065,30 @@ export class CoreWSProvider {
 
         if (data === null) {
             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                errorcode: 'invalidresponse',
-                errorDetails: Translate.instant('core.errorinvalidresponse', { method: 'upload.php' }),
+                debug: {
+                    code: 'invalidresponse',
+                    details: Translate.instant('core.errorinvalidresponse', { method: 'upload.php' }),
+                },
             });
         }
 
         if (!data) {
             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                errorcode: 'serverconnectionupload',
-                errorDetails: Translate.instant('core.serverconnection', {
-                    details: Translate.instant('core.errorinvalidresponse', { method: 'upload.php' }),
-                }),
+                debug: {
+                    code: 'serverconnectionupload',
+                    details: Translate.instant('core.serverconnection', {
+                        details: Translate.instant('core.errorinvalidresponse', { method: 'upload.php' }),
+                    }),
+                },
             });
         } else if (typeof data != 'object') {
             this.logger.warn('Upload file: Response of type "' + typeof data + '" received, expecting "object"');
 
             throw await this.createCannotConnectSiteError(preSets.siteUrl, {
-                errorcode: 'invalidresponse',
-                errorDetails: Translate.instant('core.errorinvalidresponse', { method: 'upload.php' }),
+                debug: {
+                    code: 'invalidresponse',
+                    details: Translate.instant('core.errorinvalidresponse', { method: 'upload.php' }),
+                },
             });
         }
 
@@ -1135,7 +1231,7 @@ export class CoreWSProvider {
                 observable = observable.pipe(timeout(angularOptions.timeout));
             }
 
-            return observable.toPromise();
+            return firstValueFrom(observable);
         }
     }
 

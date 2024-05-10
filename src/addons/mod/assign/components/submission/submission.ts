@@ -60,6 +60,7 @@ import { AddonModAssignModuleHandlerService } from '../../services/handlers/modu
 import { CanLeave } from '@guards/can-leave';
 import { CoreTime } from '@singletons/time';
 import { isSafeNumber, SafeNumber } from '@/core/utils/types';
+import { CoreIonicColorNames } from '@singletons/colors';
 
 /**
  * Component that displays an assignment submission.
@@ -815,7 +816,7 @@ export class AddonModAssignSubmissionComponent implements OnInit, OnDestroy, Can
         if (this.hasOffline || this.submittedOffline) {
             // Offline data.
             this.statusTranslated = Translate.instant('core.notsent');
-            this.statusColor = 'warning';
+            this.statusColor = CoreIonicColorNames.WARNING;
         } else if (!this.assign.teamsubmission) {
 
             // Single submission.
@@ -1124,8 +1125,14 @@ export class AddonModAssignSubmissionComponent implements OnInit, OnDestroy, Can
             return [];
         }
 
+        // Receved submission statement should not be undefined. It would mean that the WS is not returning the value.
         const submissionStatementMissing = !!this.assign.requiresubmissionstatement &&
             this.assign.submissionstatement === undefined;
+
+        // If received submission statement is empty, then it's not required.
+        if(!this.assign.submissionstatement && this.assign.submissionstatement !== undefined) {
+            this.assign.requiresubmissionstatement = 0;
+        }
 
         this.canSubmit = !this.isSubmittedForGrading && !this.submittedOffline && (lastAttempt.cansubmit ||
             (this.hasOffline && AddonModAssign.canSubmitOffline(this.assign, submissionStatus)));

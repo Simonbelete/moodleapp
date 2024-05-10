@@ -30,15 +30,17 @@ import { CoreUrlUtils } from '@services/utils/url';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreLogger } from '@singletons/logger';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { CoreConstants } from '../constants';
+import { DownloadStatus } from '../constants';
 import { CoreNetwork } from '@services/network';
 import { Translate } from '@singletons';
 import { AsyncDirective } from '@classes/async-directive';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
+import { CoreTextUtils } from '@services/utils/text';
+import { CoreArray } from '@singletons/array';
 
 /**
  * Directive to handle external content.
@@ -278,7 +280,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             return;
         }
 
-        const urls = CoreUtils.uniqueArray(Array.from(inlineStyles.match(/https?:\/\/[^"') ;]*/g) ?? []));
+        const urls = CoreArray.unique(Array.from(inlineStyles.match(/https?:\/\/[^"') ;]*/g) ?? []));
         if (!urls.length) {
             return;
         }
@@ -287,7 +289,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             const finalUrl = await CoreFilepool.getSrcByUrl(siteId, url, this.component, this.componentId, 0, true, true);
 
             this.logger.debug('Using URL ' + finalUrl + ' for ' + url + ' in inline styles');
-            inlineStyles = inlineStyles.replace(new RegExp(url, 'gi'), finalUrl);
+            inlineStyles = inlineStyles.replace(new RegExp(CoreTextUtils.escapeForRegex(url), 'gi'), finalUrl);
         });
 
         try {
@@ -418,7 +420,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             }
 
             state = newState;
-            if (state === CoreConstants.DOWNLOADING) {
+            if (state === DownloadStatus.DOWNLOADING) {
                 return;
             }
 
@@ -442,7 +444,7 @@ export class CoreExternalContentDirective implements AfterViewInit, OnChanges, O
             clickableEl.addEventListener(eventName, () => {
                 // User played media or opened a downloadable link.
                 // Download the file if in wifi and it hasn't been downloaded already (for big files).
-                if (state !== CoreConstants.DOWNLOADED && state !== CoreConstants.DOWNLOADING && CoreNetwork.isWifi()) {
+                if (state !== DownloadStatus.DOWNLOADED && state !== DownloadStatus.DOWNLOADING && CoreNetwork.isWifi()) {
                     // We aren't using the result, so it doesn't matter which of the 2 functions we call.
                     CoreFilepool.getUrlByUrl(site.getId(), url, this.component, this.componentId, 0, false);
                 }

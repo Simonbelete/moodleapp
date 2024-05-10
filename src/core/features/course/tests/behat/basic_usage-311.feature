@@ -1,11 +1,12 @@
-@core @core_course @app @javascript @lms_upto3.11
+@core_course @app @javascript @lms_upto3.11
 Feature: Test basic usage of one course in app
   In order to participate in one course while using the mobile app
   As a student
   I need basic course functionality to work
 
   Background:
-    Given the following "users" exist:
+    Given the Moodle site is compatible with this feature
+    And the following "users" exist:
       | username | firstname | lastname | email |
       | teacher1 | Teacher | teacher | teacher1@example.com |
       | student1 | Student | student | student1@example.com |
@@ -72,8 +73,7 @@ Feature: Test basic usage of one course in app
       | workshop      | Test workshop name    | Test workshop     | C1     | workshop       | 0         | 3       |
 
   Scenario: Self enrol
-    Given the Moodle site is compatible with this feature
-    And I log in as "teacher1"
+    Given I log in as "teacher1"
     And I am on "Course 1" course homepage
     And I add "Self enrolment" enrolment method with:
       | Custom instance name | Student self enrolment |
@@ -101,18 +101,9 @@ Feature: Test basic usage of one course in app
     And I should not find "Test glossary" in the app
 
   Scenario: Guest access
-    Given I entered the course "Course 1" as "teacher1" in the app
-    And I press "Course summary" in the app
-    And I press "Open in browser" in the app
-    And I switch to the browser tab opened by the app
-    And I log in as "teacher1"
-    And I press "Actions menu"
-    And I follow "More..."
-    And I follow "Users"
-    And I follow "Enrolment methods"
+    Given I am on the "Course 1" "enrolment methods" page logged in as "teacher1"
     And I click on "Enable" "icon" in the "Guest access" "table_row"
-    And I close the browser tab opened by the app
-    Given I entered the app as "student2"
+    And I entered the app as "student2"
     When I press "Site home" in the app
     And I press "Available courses" in the app
     And I press "Course 1" in the app

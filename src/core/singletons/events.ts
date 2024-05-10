@@ -15,11 +15,13 @@
 import { Subject } from 'rxjs';
 
 import { CoreLogger } from '@singletons/logger';
-import { CoreSite, CoreSiteInfoResponse, CoreSitePublicConfigResponse } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreFilepoolComponentFileEventData } from '@services/filepool';
 import { CoreRedirectPayload } from '@services/navigator';
 import { CoreCourseModuleCompletionData } from '@features/course/services/course-helper';
 import { CoreScreenOrientation } from '@services/screen';
+import { CoreSiteInfoResponse, CoreSitePublicConfigResponse } from '@classes/sites/unauthenticated-site';
+import { DownloadStatus } from '../constants';
 
 /**
  * Observer instance to stop listening to an event.
@@ -39,8 +41,6 @@ export interface CoreEventsData {
     [CoreEvents.SITE_ADDED]: CoreEventSiteAddedData;
     [CoreEvents.SITE_DELETED]: CoreSite;
     [CoreEvents.SESSION_EXPIRED]: CoreEventSessionExpiredData;
-    // eslint-disable-next-line deprecation/deprecation
-    [CoreEvents.CORE_LOADING_CHANGED]: CoreEventLoadingChangedData;
     [CoreEvents.COURSE_STATUS_CHANGED]: CoreEventCourseStatusChanged;
     [CoreEvents.PACKAGE_STATUS_CHANGED]: CoreEventPackageStatusChanged;
     [CoreEvents.USER_DELETED]: CoreEventUserDeletedData;
@@ -104,10 +104,6 @@ export class CoreEvents {
     static readonly APP_LAUNCHED_URL = 'app_launched_url'; // App opened with a certain URL (custom URL scheme).
     static readonly FILE_SHARED = 'file_shared';
     static readonly KEYBOARD_CHANGE = 'keyboard_change';
-    /**
-     * @deprecated since 4.0. Use CoreDirectivesRegistry promises instead.
-     */
-    static readonly CORE_LOADING_CHANGED = 'core_loading_changed';
     static readonly ORIENTATION_CHANGE = 'orientation_change';
     static readonly SEND_ON_ENTER_CHANGED = 'send_on_enter_changed';
     static readonly SELECT_COURSE_TAB = 'select_course_tab';
@@ -331,7 +327,7 @@ export type CoreEventLoadingChangedData = {
  */
 export type CoreEventCourseStatusChanged = {
     courseId: number; // Course Id.
-    status: string;
+    status: DownloadStatus;
 };
 
 /**
@@ -340,7 +336,7 @@ export type CoreEventCourseStatusChanged = {
 export type CoreEventPackageStatusChanged = {
     component: string;
     componentId: string | number;
-    status: string;
+    status: DownloadStatus;
 };
 
 /**

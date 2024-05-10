@@ -49,7 +49,6 @@ export class CoreUserToursService {
                 { cachingStrategy: CoreDatabaseCachingStrategy.Eager },
                 CoreApp.getDB(),
                 USER_TOURS_TABLE_NAME,
-                ['id'],
             );
 
             await table.initialize();
@@ -128,6 +127,7 @@ export class CoreUserToursService {
         const tour = CoreDirectivesRegistry.require(element, CoreUserToursUserTourComponent);
 
         viewContainer?.setAttribute('aria-hidden', 'true');
+        viewContainer?.setAttribute('tabindex', '-1');
 
         this.toursListeners[options.id]?.forEach(listener => listener.resolve());
 
@@ -150,6 +150,8 @@ export class CoreUserToursService {
         const viewContainer = container.querySelector('ion-router-outlet, ion-nav, #ion-view-container-root');
 
         viewContainer?.removeAttribute('aria-hidden');
+        viewContainer?.removeAttribute('tabindex');
+
     }
 
     /**

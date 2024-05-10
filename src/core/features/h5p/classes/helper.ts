@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 
 import { CoreFile, CoreFileProvider } from '@services/file';
 import { CoreSites } from '@services/sites';
@@ -201,7 +201,7 @@ export class CoreH5PHelper {
         const destFolder = CorePath.concatenatePaths(CoreFileProvider.TMPFOLDER, 'h5p/' + folderName);
 
         // Unzip the file.
-        await CoreFile.unzipFile(file.toURL(), destFolder, onProgress);
+        await CoreFile.unzipFile(CoreFile.getFileEntryURL(file), destFolder, onProgress);
 
         try {
             // Notify that the unzip is starting.

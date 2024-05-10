@@ -16,12 +16,12 @@ import { Component, ElementRef, Input, OnInit } from '@angular/core';
 import {
     CoreCourse,
     CoreCourseModuleCompletionStatus,
-    CoreCourseModuleCompletionTracking,
     CoreCourseProvider,
 } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleData, CoreCourseSection } from '@features/course/services/course-helper';
 import { CoreCourseFormatDelegate } from '@features/course/services/format-delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
+import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { ModalController } from '@singletons';
@@ -61,7 +61,7 @@ export class CoreCourseCourseIndexComponent implements OnInit {
             return;
         }
 
-        let completionEnabled = !!this.course.enablecompletion;
+        let completionEnabled = CoreCoursesHelper.isCompletionEnabledInCourse(this.course);
         if (completionEnabled && 'completionusertracked' in this.course && this.course.completionusertracked !== undefined) {
             completionEnabled = this.course.completionusertracked;
         }
@@ -87,10 +87,9 @@ export class CoreCourseCourseIndexComponent implements OnInit {
                 const modules = section.modules
                     .filter((module) => this.renderModule(section, module))
                     .map((module) => {
-                        const completionStatus = !completionEnabled || module.completiondata === undefined ||
-                        module.completiondata.tracking == CoreCourseModuleCompletionTracking.COMPLETION_TRACKING_NONE
-                            ? undefined
-                            : module.completiondata.state;
+                        const completionStatus = completionEnabled
+                            ? CoreCourseHelper.getCompletionStatus(module.completiondata)
+                            : undefined;
 
                         return {
                             id: module.id,

@@ -13,10 +13,9 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { InAppBrowserObject, InAppBrowserOptions } from '@ionic-native/in-app-browser';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { InAppBrowserObject, InAppBrowserOptions } from '@awesome-cordova-plugins/in-app-browser';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { Subscription } from 'rxjs';
-
 import { CoreEvents } from '@singletons/events';
 import { CoreFile } from '@services/file';
 import { CoreLang } from '@services/lang';
@@ -24,7 +23,7 @@ import { CoreWS } from '@services/ws';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreMimetypeUtils } from '@services/utils/mimetype';
 import { CoreTextUtils } from '@services/utils/text';
-import { makeSingleton, Clipboard, InAppBrowser, FileOpener, WebIntent, QRScanner, Translate, NgZone } from '@singletons';
+import { makeSingleton, Clipboard, InAppBrowser, FileOpener, WebIntent, Translate, NgZone } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreViewerQRScannerComponent } from '@features/viewer/components/qr-scanner/qr-scanner';
 import { CoreCanceledError } from '@classes/errors/cancelederror';
@@ -40,6 +39,8 @@ import { CoreSites } from '@services/sites';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreUrlUtils } from './url';
+import { QRScanner } from '@features/native/plugins';
+import { CoreArray } from '@singletons/array';
 
 export type TreeNode<T> = T & { children: TreeNode<T>[] };
 
@@ -350,6 +351,7 @@ export class CoreUtilsProvider {
      * @param from Object to copy the properties from.
      * @param to Object where to store the properties.
      * @param clone Whether the properties should be cloned (so they are different instances).
+     * @deprecated since 4.4. Not used anymore.
      */
     copyProperties(from: Record<string, unknown>, to: Record<string, unknown>, clone: boolean = true): void {
         for (const name in from) {
@@ -376,7 +378,7 @@ export class CoreUtilsProvider {
             virtualInput.innerHTML = text;
             virtualInput.select();
             virtualInput.setSelectionRange(0, 99999);
-            document.execCommand('copy');
+            document.execCommand('copy'); // eslint-disable-line deprecation/deprecation
         }
 
         // Show toast using ionicLoading.
@@ -387,6 +389,7 @@ export class CoreUtilsProvider {
      * Empties an array without losing its reference.
      *
      * @param array Array to empty.
+     * @deprecated since 4.4. Not used anymore.
      */
     emptyArray(array: unknown[]): void {
         array.length = 0; // Empty array without losing its reference.
@@ -396,6 +399,7 @@ export class CoreUtilsProvider {
      * Removes all properties from an object without losing its reference.
      *
      * @param object Object to remove the properties.
+     * @deprecated since 4.4. Not used anymore.
      */
     emptyObject(object: Record<string, unknown>): void {
         for (const key in object) {
@@ -482,17 +486,10 @@ export class CoreUtilsProvider {
      * @param array Array to filter.
      * @param regex RegExp to apply to each string.
      * @returns Filtered array.
+     * @deprecated since 4.4. Use CoreArray.filterByRegexp instead.
      */
     filterByRegexp(array: string[], regex: RegExp): string[] {
-        if (!array || !array.length) {
-            return [];
-        }
-
-        return array.filter((entry) => {
-            const matches = entry.match(regex);
-
-            return matches && matches.length;
-        });
+        return CoreArray.filterByRegexp(array, regex);
     }
 
     /**
@@ -749,16 +746,17 @@ export class CoreUtilsProvider {
     async getMimeTypeFromUrl(url: string): Promise<string> {
         // First check if it can be guessed from the URL.
         const extension = CoreMimetypeUtils.guessExtensionFromUrl(url);
-        let mimetype = extension && CoreMimetypeUtils.getMimeType(extension);
+        const mimetype = extension && CoreMimetypeUtils.getMimeType(extension);
 
-        if (mimetype) {
+        // Ignore PHP extension for now, it could be serving a file.
+        if (mimetype && extension !== 'php') {
             return mimetype;
         }
 
         // Can't be guessed, get the remote mimetype.
-        mimetype = await CoreWS.getRemoteFileMimeType(url);
+        const remoteMimetype = await CoreWS.getRemoteFileMimeType(url);
 
-        return mimetype || '';
+        return remoteMimetype || mimetype || '';
     }
 
     /**
@@ -955,7 +953,7 @@ export class CoreUtilsProvider {
      * @returns Merged array.
      */
     mergeArraysWithoutDuplicates<T>(array1: T[], array2: T[], key?: string): T[] {
-        return this.uniqueArray(array1.concat(array2), key) as T[];
+        return CoreArray.unique(array1.concat(array2), key) as T[];
     }
 
     /**
@@ -1059,7 +1057,7 @@ export class CoreUtilsProvider {
 
     /**
      * Open a URL using InAppBrowser.
-     * Do not use for files, refer to {@link openFile}.
+     * Do not use for files, refer to {@link CoreUtilsProvider.openFile}.
      *
      * @param url The URL to open.
      * @param options Override default options passed to InAppBrowser.
@@ -1176,7 +1174,7 @@ export class CoreUtilsProvider {
 
     /**
      * Open a URL using a browser.
-     * Do not use for files, refer to {@link openFile}.
+     * Do not use for files, refer to {@link CoreUtilsProvider.openFile}.
      *
      * @param url The URL to open.
      * @param options Options.
@@ -1230,6 +1228,8 @@ export class CoreUtilsProvider {
                     type: CoreAnalyticsEventType.OPEN_LINK,
                     link: CoreUrlUtils.unfixPluginfileURL(url),
                 });
+
+                return;
             } catch (error) {
                 this.logger.error('Error opening online file ' + url + ' with mimetype ' + mimetype);
                 this.logger.error('Error: ', JSON.stringify(error));
@@ -1405,7 +1405,7 @@ export class CoreUtilsProvider {
      * @param enumeration Enumeration object.
      * @returns Keys of the enumeration.
      */
-    enumKeys<O, K extends keyof O = keyof O>(enumeration: O): K[] {
+    enumKeys<O extends object, K extends keyof O = keyof O>(enumeration: O): K[] {
         return Object.keys(enumeration).filter(k => Number.isNaN(+k)) as K[];
     }
 
@@ -1608,21 +1608,10 @@ export class CoreUtilsProvider {
      * @param array The array to treat.
      * @param [key] Key of the property that must be unique. If not specified, the whole entry.
      * @returns Array without duplicate values.
+     * @deprecated since 4.4. Use CoreArray.unique instead.
      */
     uniqueArray<T>(array: T[], key?: string): T[] {
-        const unique = {}; // Use an object to make it faster to check if it's duplicate.
-
-        return array.filter(entry => {
-            const value = key ? entry[key] : entry;
-
-            if (value in unique) {
-                return false;
-            }
-
-            unique[value] = true;
-
-            return true;
-        });
+        return CoreArray.unique(array, key);
     }
 
     /**
@@ -1824,23 +1813,29 @@ export class CoreUtilsProvider {
      * @param condition Condition.
      * @returns Cancellable promise.
      */
-    waitFor(condition: () => boolean, interval: number = 50): CoreCancellablePromise<void> {
+    waitFor(condition: () => boolean): CoreCancellablePromise<void>;
+    waitFor(condition: () => boolean, options: CoreUtilsWaitOptions): CoreCancellablePromise<void>;
+    waitFor(condition: () => boolean, interval: number): CoreCancellablePromise<void>;
+    waitFor(condition: () => boolean, optionsOrInterval: CoreUtilsWaitOptions | number = {}): CoreCancellablePromise<void> {
+        const options = typeof optionsOrInterval === 'number' ? { interval: optionsOrInterval } : optionsOrInterval;
+
         if (condition()) {
             return CoreCancellablePromise.resolve();
         }
 
+        const startTime = Date.now();
         let intervalId: number | undefined;
 
         return new CoreCancellablePromise<void>(
             async (resolve) => {
                 intervalId = window.setInterval(() => {
-                    if (!condition()) {
+                    if (!condition() && (!options.timeout || (Date.now() - startTime < options.timeout))) {
                         return;
                     }
 
                     resolve();
                     window.clearInterval(intervalId);
-                }, interval);
+                }, options.interval ?? 50);
             },
             () => window.clearInterval(intervalId),
         );
@@ -1935,6 +1930,14 @@ export type CoreUtilsOpenInBrowserOptions = {
  */
 export type CoreUtilsOpenInAppOptions = InAppBrowserOptions & {
     originalUrl?: string; // Original URL to open (in case the URL was treated, e.g. to add a token or an auto-login).
+};
+
+/**
+ * Options for waiting.
+ */
+export type CoreUtilsWaitOptions = {
+    interval?: number;
+    timeout?: number;
 };
 
 /**

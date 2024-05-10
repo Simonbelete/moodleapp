@@ -12,7 +12,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-import { CoreConstants } from '@/core/constants';
+import { DownloadStatus } from '@/core/constants';
 import { Component, ElementRef, Input, OnChanges, OnDestroy, OnInit } from '@angular/core';
 import { CoreCourseProvider, CoreCourse } from '@features/course/services/course';
 import { CoreCourseHelper, CorePrefetchStatusInfo } from '@features/course/services/course-helper';
@@ -51,7 +51,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
     prefetchCourseData: CorePrefetchStatusInfo = {
         icon: '',
         statusTranslatable: 'core.loading',
-        status: '',
+        status: DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED,
         loading: true,
     };
 
@@ -60,14 +60,24 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
     progress = -1;
     completionUserTracked: boolean | undefined = false;
 
-    protected courseStatus = CoreConstants.NOT_DOWNLOADED;
+    protected courseStatus: DownloadStatus = DownloadStatus.DOWNLOADABLE_NOT_DOWNLOADED;
     protected isDestroyed = false;
     protected courseStatusObserver?: CoreEventObserver;
 
     protected element: HTMLElement;
+    protected progressObserver: CoreEventObserver;
 
     constructor(element: ElementRef) {
         this.element = element.nativeElement;
+        const siteId = CoreSites.getCurrentSiteId();
+        this.progressObserver = CoreEvents.on(CoreCourseProvider.PROGRESS_UPDATED, (data) => {
+            if (!this.course || this.course.id !== data.courseId || !('progress' in this.course)) {
+                return;
+            }
+
+            this.course.progress = data.progress;
+            this.progress = this.course.progress ?? undefined;
+        }, siteId);
     }
 
     /**
@@ -211,7 +221,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
      *
      * @param status Status to show.
      */
-    protected updateCourseStatus(status: string): void {
+    protected updateCourseStatus(status: DownloadStatus): void {
         const statusData = CoreCourseHelper.getCoursePrefetchStatusInfo(status);
 
         this.courseStatus = status;
@@ -219,7 +229,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
         this.prefetchCourseData.icon = statusData.icon;
         this.prefetchCourseData.statusTranslatable = statusData.statusTranslatable;
         this.prefetchCourseData.loading = statusData.loading;
-        this.prefetchCourseData.downloadSucceeded = status === CoreConstants.DOWNLOADED;
+        this.prefetchCourseData.downloadSucceeded = status === DownloadStatus.DOWNLOADED;
     }
 
     /**
@@ -295,7 +305,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
                 }
                 break;
             case 'delete':
-                if (this.courseStatus == CoreConstants.DOWNLOADED || this.courseStatus == CoreConstants.OUTDATED) {
+                if (this.courseStatus === DownloadStatus.DOWNLOADED || this.courseStatus === DownloadStatus.OUTDATED) {
                     this.deleteCourseStoredData();
                 }
                 break;
@@ -387,6 +397,7 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
     ngOnDestroy(): void {
         this.isDestroyed = true;
         this.courseStatusObserver?.off();
+        this.progressObserver.off();
     }
 
 }

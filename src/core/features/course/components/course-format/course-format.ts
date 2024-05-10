@@ -39,7 +39,7 @@ import {
 } from '@features/course/services/course-helper';
 import { CoreCourseFormatDelegate } from '@features/course/services/format-delegate';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
-import { IonContent, IonRefresher } from '@ionic/angular';
+import { IonContent } from '@ionic/angular';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreCourseCourseIndexComponent, CoreCourseIndexSectionWithModule } from '../course-index/course-index';
 import { CoreBlockHelper } from '@features/block/services/block-helper';
@@ -52,6 +52,7 @@ import { CoreDom } from '@singletons/dom';
 import { CoreUserTourDirectiveOptions } from '@directives/user-tour';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreBlockSideBlocksComponent } from '@features/block/components/side-blocks/side-blocks';
+import { ContextLevel } from '@/core/constants';
 
 /**
  * Component to display course contents using a certain format. If the format isn't found, use default one.
@@ -116,6 +117,8 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
     lastModuleViewed?: CoreCourseViewedModulesDBRecord;
     viewedModules: Record<number, boolean> = {};
     completionStatusIncomplete = CoreCourseModuleCompletionStatus.COMPLETION_INCOMPLETE;
+
+    communicationRoomUrl?: string;
 
     protected selectTabObserver?: CoreEventObserver;
     protected modViewedObserver?: CoreEventObserver;
@@ -197,6 +200,8 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
             this.displayBlocks = CoreCourseFormatDelegate.displayBlocks(this.course);
 
             this.hasBlocks = await CoreBlockHelper.hasCourseBlocks(this.course.id);
+
+            this.communicationRoomUrl = await CoreCourseHelper.getCourseCommunicationRoom(this.course);
         }
 
         if (changes.sections && this.sections) {
@@ -314,7 +319,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
             CoreDomUtils.openSideModal({
                 component: CoreBlockSideBlocksComponent,
                 componentProps: {
-                    contextLevel: 'course',
+                    contextLevel: ContextLevel.COURSE,
                     instanceId: this.course.id,
                     initialBlockInstanceId: this.initialBlockInstanceId,
                 },
@@ -377,18 +382,18 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
         sections: CoreCourseSection[],
         viewedModule: CoreCourseViewedModulesDBRecord,
     ): CoreCourseSection | undefined {
-        if (viewedModule.sectionId) {
-            const lastModuleSection = sections.find(section => section.id === viewedModule.sectionId);
+        let lastModuleSection: CoreCourseSection | undefined;
 
-            if (lastModuleSection) {
-                return lastModuleSection;
-            }
+        if (viewedModule.sectionId) {
+            lastModuleSection = sections.find(section => section.id === viewedModule.sectionId);
         }
 
-        // No sectionId or section not found. Search the module.
-        return sections.find(
-            section => section.modules.some(module => module.id === viewedModule.cmId),
-        );
+        if (!lastModuleSection) {
+            // No sectionId or section not found. Search the module.
+            lastModuleSection = sections.find(section => section.modules.some(module => module.id === viewedModule.cmId));
+        }
+
+        return lastModuleSection && lastModuleSection.id !== this.stealthModulesSectionId ? lastModuleSection : undefined;
     }
 
     /**
@@ -426,6 +431,8 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
 
         const data = await CoreDomUtils.openModal<CoreCourseIndexSectionWithModule>({
             component: CoreCourseCourseIndexComponent,
+            initialBreakpoint: 1,
+            breakpoints: [0, 1],
             componentProps: {
                 course: this.course,
                 sections: this.sections,
@@ -567,7 +574,7 @@ export class CoreCourseFormatComponent implements OnInit, OnChanges, OnDestroy {
      * @param afterCompletionChange Whether the refresh is due to a completion change.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, afterCompletionChange?: boolean): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, afterCompletionChange?: boolean): Promise<void> {
         const promises = this.dynamicComponents?.map(async (component) => {
             await component.callComponentMethod('doRefresh', refresher, done, afterCompletionChange);
         }) || [];

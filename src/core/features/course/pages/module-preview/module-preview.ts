@@ -20,8 +20,8 @@ import {
 import { CoreCourse } from '@features/course/services/course';
 import { CoreCourseHelper, CoreCourseModuleData, CoreCourseSection } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
+import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 
@@ -43,6 +43,7 @@ export class CoreCourseModulePreviewPage implements OnInit {
     unsupported = false;
     isDisabledInSite = false;
     showManualCompletion = false;
+    displayOpenInBrowser = false;
 
     protected debouncedUpdateModule?: () => void; // Update the module after a certain time.
 
@@ -62,6 +63,7 @@ export class CoreCourseModulePreviewPage implements OnInit {
             return;
         }
 
+        this.displayOpenInBrowser = !!CoreSites.getCurrentSite()?.shouldDisplayInformativeLinks();
         this.debouncedUpdateModule = CoreUtils.debounce(() => {
             this.doRefresh();
         }, 10000);
@@ -137,7 +139,7 @@ export class CoreCourseModulePreviewPage implements OnInit {
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
 
         await CoreCourse.invalidateModule(this.module.id);
 

@@ -28,6 +28,7 @@ import { CoreNavigator } from '@services/navigator';
 import { CorePlatform } from '@services/platform';
 import { CoreNetwork } from '@services/network';
 import { CoreLoginHelper } from '@features/login/services/login-helper';
+import { CoreSitesFactory } from '@services/sites-factory';
 
 /**
  * Device Info to be shown and copied to clipboard.
@@ -76,6 +77,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
     currentLangName?: string;
     fsClickable = false;
     showDevOptions = false;
+    displaySiteUrl = false;
     protected devOptionsClickCounter = 0;
     protected devOptionsForced = false;
     protected devOptionsClickTimeout?: number;
@@ -201,6 +203,8 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
 
         this.deviceInfo.siteUrl = currentSite?.getURL() || firstUrl || undefined;
         this.deviceInfo.isPrefixedUrl = !!sites.length;
+        this.displaySiteUrl = !!this.deviceInfo.siteUrl &&
+            (currentSite ?? CoreSitesFactory.makeUnauthenticatedSite(this.deviceInfo.siteUrl)).shouldDisplayInformativeLinks();
 
         if (fileProvider.isAvailable()) {
             const basepath = await fileProvider.getBasePath();
@@ -209,7 +213,7 @@ export class CoreSettingsDeviceInfoPage implements OnDestroy {
         }
 
         const showDevOptionsOnConfig = await CoreConfig.get('showDevOptions', 0);
-        this.devOptionsForced = CoreConstants.BUILD.isDevelopment || CoreConstants.BUILD.isTesting;
+        this.devOptionsForced = CoreConstants.enableDevTools();
         this.showDevOptions = this.devOptionsForced || showDevOptionsOnConfig == 1;
 
         const publicKey = this.deviceInfo.pushId ?

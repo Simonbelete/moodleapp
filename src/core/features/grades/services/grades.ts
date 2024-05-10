@@ -18,7 +18,7 @@ import { CoreSites } from '@services/sites';
 import { makeSingleton } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreWSExternalWarning } from '@services/ws';
-import { CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreError } from '@classes/errors/error';
 import { SafeNumber } from '@/core/utils/types';
 
@@ -340,16 +340,6 @@ export class CoreGradesProvider {
         const course = await CoreCourses.getUserCourse(courseId, true, siteId);
 
         return !(course && course.showgrades !== undefined && !course.showgrades);
-    }
-
-    /**
-     * Returns whether or not WS Grade Items is available.
-     *
-     * @returns True if ws is available, false otherwise.
-     * @deprecated since 4.0.
-     */
-    async isGradeItemsAvailable(): Promise<boolean> {
-        return true;
     }
 
     /**

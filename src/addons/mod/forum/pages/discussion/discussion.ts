@@ -23,7 +23,7 @@ import { CoreRatingOffline } from '@features/rating/services/rating-offline';
 import { CoreRatingSyncProvider } from '@features/rating/services/rating-sync';
 import { CoreUser } from '@features/user/services/user';
 import { CanLeave } from '@guards/can-leave';
-import { IonContent, IonRefresher } from '@ionic/angular';
+import { IonContent } from '@ionic/angular';
 import { CoreNetwork } from '@services/network';
 import { CoreNavigator } from '@services/navigator';
 import { CoreScreen } from '@services/screen';
@@ -31,7 +31,6 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
 import { NgZone, Translate } from '@singletons';
-import { CoreArray } from '@singletons/array';
 import { CoreDom } from '@singletons/dom';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
@@ -165,8 +164,11 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             return;
         }
 
+        const currentSite = CoreSites.getCurrentSite();
         this.isOnline = CoreNetwork.isOnline();
-        this.externalUrl = CoreSites.getCurrentSite()?.createSiteUrl('/mod/forum/discuss.php', { d: this.discussionId.toString() });
+        this.externalUrl = currentSite && currentSite.shouldDisplayInformativeLinks() ?
+            currentSite.createSiteUrl('/mod/forum/discuss.php', { d: this.discussionId.toString() }) :
+            undefined;
         this.onlineObserver = CoreNetwork.onChange().subscribe(() => {
             // Execute the callback in the Angular zone, so change detection doesn't stop working.
             NgZone.run(() => {
@@ -647,7 +649,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
      * @param showErrors If show errors to the user of hide them.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher | null, done?: () => void, showErrors: boolean = false): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement | null, done?: () => void, showErrors: boolean = false): Promise<void> {
         if (this.discussionLoaded) {
             await this.refreshPosts(true, showErrors).finally(() => {
                 refresher?.complete();
@@ -823,7 +825,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
     protected getAllPosts(): Post[] {
         const allPosts = this.posts.map(post => this.flattenPostHierarchy(post));
 
-        return CoreArray.flatten(allPosts);
+        return allPosts.flat();
     }
 
     /**
@@ -861,7 +863,7 @@ export class AddonModForumDiscussionPage implements OnInit, AfterViewInit, OnDes
             });
         }
 
-        if (!this.courseId || !this.cmId) {
+        if (!this.courseId || !this.cmId || !this.trackPosts) {
             return;
         }
 
@@ -890,8 +892,10 @@ class AddonModForumDiscussionDiscussionsSwipeManager extends AddonModForumDiscus
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return this.getSource().DISCUSSIONS_PATH_PREFIX + route.params.discussionId;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return this.getSource().DISCUSSIONS_PATH_PREFIX + snapshot.params.discussionId;
     }
 
 }

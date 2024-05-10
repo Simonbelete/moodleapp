@@ -1,14 +1,15 @@
 /** Format Text - Show more styles. */
 /** Styles of elements inside the directive should be placed in format-text.scss */
-@import "~theme/globals";
+@use "theme/globals.variables" as global;
+@use "sass:math" as math;
 
 core-format-text {
     --core-format-text-background: var(--background, var(--ion-item-background));
-    --core-format-text-viewer-icon-background: rgba(255, 255, 255, .5);
+    --core-format-text-viewer-icon-background: rgb(255 255 255 / 50%);
 }
 
 html.dark core-format-text {
-    --core-format-text-viewer-icon-background: rgba(0, 0, 0, .5);
+    --core-format-text-viewer-icon-background: rgb(0 0 0 / 50%);
 }
 
 core-format-text {
@@ -42,7 +43,7 @@ core-format-text {
             }
         }
 
-        @if ($core-format-text-never-shorten) {
+        @if (global.$core-format-text-never-shorten) {
             &.collapsible-enabled {
                 --display-toggle: none !important;
                 --collapsible-height: auto !important;
@@ -74,14 +75,14 @@ core-format-text {
         position: absolute;
         @include position(null, 10px, 10px, null);
         color: var(--ion-text-color);
-        border-radius: var(--radius-xl);
+        border-radius: var(--mdl-shape-borderRadius-xl);
         background-color: var(--core-format-text-viewer-icon-background);
         display: flex;
 
-        width: var(--a11y-min-target-size);
-        height: var(--a11y-min-target-size);
-        max-width: var(--a11y-min-target-size);
-        font-size: 24px;
+        width: var(--a11y-sizing-minTargetSize);
+        height: var(--a11y-sizing-minTargetSize);
+        max-width: var(--a11y-sizing-minTargetSize);
+        font-size: var(--mdl-typography-icon-fontSize-lg);
 
         ion-icon {
             flex: 1;
@@ -182,25 +183,25 @@ core-format-text {
 
     .embed-responsive-21by9 {
         &::before {
-            padding-top: percentage(9 / 21);
+            padding-top: percentage(math.div(9, 21));
         }
     }
 
     .embed-responsive-16by9 {
         &::before {
-            padding-top: percentage(9 / 16);
+            padding-top: percentage(math.div(9, 16));
         }
     }
 
     .embed-responsive-4by3 {
         &::before {
-            padding-top: percentage(3 / 4);
+            padding-top: percentage(math.div(3, 4));
         }
     }
 
     .embed-responsive-1by1 {
         &::before {
-            padding-top: percentage(1 / 1);
+            padding-top: percentage(1);
         }
     }
 
@@ -219,6 +220,10 @@ core-rich-text-editor .core-rte-editor {
     p {
         margin-bottom: 1rem;
         margin-block-start: 0;
+    }
+
+    > p:only-child {
+        margin-bottom: 0;
     }
 
     hr {
@@ -261,9 +266,9 @@ core-rich-text-editor .core-rte-editor {
     }
 
     img.icon {
-        font-size: 16px;
-        width: 16px;
-        height: 16px;
+        font-size: var(--mdl-typography-icon-fontSize-sm);
+        width: var(--mdl-typography-icon-fontSize-sm);
+        height: var(--mdl-typography-icon-fontSize-sm);
         margin: 0;
         padding: 0;
         -webkit-box-sizing: content-box;
@@ -280,7 +285,7 @@ core-rich-text-editor .core-rte-editor {
         border: 1px solid var(--gray-500);
         background: var(--contrast-background);
         padding: 6px 8px;
-        border-radius: var(--radius-xs);
+        border-radius: var(--mdl-shape-borderRadius-xs);
         margin-left: 2px;
         margin-right: 2px;
         margin-bottom: 10px;
@@ -474,7 +479,7 @@ core-rich-text-editor .core-rte-editor {
         font-weight: 400;
     }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .alert-#{$color-name} {
             --color-base: var(--#{$color-name});
             color: var(--#{$color-name}-shade);
@@ -504,7 +509,7 @@ core-rich-text-editor .core-rte-editor {
 
         &[disabled] ~ .form-check-label,
         &:disabled ~ .form-check-label {
-            color: $gray-600;
+            color: global.$gray-600;
         }
 
     }
@@ -549,7 +554,7 @@ core-rich-text-editor .core-rte-editor {
     .border-bottom-0 { border-bottom: 0 !important; }
     .border-left-0   { border-left: 0 !important; }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .border-#{$color-name} {
             border-color: var(--#{$color-name}) !important;
         }
@@ -610,7 +615,7 @@ core-rich-text-editor .core-rte-editor {
     }
 
     // utilities/_text.scss
-    .text-monospace { font-family: SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace !important; }
+    .text-monospace { font-family: var(--mdl-typography-monospace-font) !important; }
     .text-justify  { text-align: justify !important; }
     .text-wrap     { white-space: normal !important; }
     .text-nowrap   { white-space: nowrap !important; }
@@ -633,7 +638,7 @@ core-rich-text-editor .core-rte-editor {
     .font-italic         { font-style: italic !important; }
     .text-white { color: var(--white) !important; }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .text-#{$color-name} {
             color: var(--#{$color-name});
         }
@@ -641,8 +646,8 @@ core-rich-text-editor .core-rte-editor {
 
     .text-body { color: var(--ion-text-color) !important; }
     .text-muted { color: var(--subdued-text-color) !important; }
-    .text-black-50 { color: rgba(0, 0, 0, .5) !important; }
-    .text-white-50 { color: rgba(255, 255, 255, .5) !important; }
+    .text-black-50 { color: rgb(0 0 0 / 50%) !important; }
+    .text-white-50 { color: rgb(255 255 255 / 50%) !important; }
     .text-decoration-none { text-decoration: none !important; }
     .text-break {
         word-break: break-word !important; // Deprecated, but avoids issues with flex containers
@@ -669,7 +674,7 @@ core-rich-text-editor .core-rte-editor {
         background-color: var(--danger);
     }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .label-#{$color-name} {
             color: var(--#{$color-name}-contrast);
             background-color: var(--#{$color-name});
@@ -690,7 +695,7 @@ core-rich-text-editor .core-rte-editor {
         }
     }
 
-    @each $color-name, $unused in $colors {
+    @each $color-name, $unused in global.$colors {
         .btn.btn-#{$color-name} {
             --color-base: var(--#{$color-name});
             color: var(--#{$color-name}-shade);

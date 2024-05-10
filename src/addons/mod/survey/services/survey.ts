@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseCommonModWSOptions } from '@features/course/services/course';
 import { CoreCourseLogHelper } from '@features/course/services/log-helper';
 import { CoreNetwork } from '@services/network';
@@ -24,6 +24,8 @@ import { CoreUtils } from '@services/utils/utils';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
 import { AddonModSurveyOffline } from './survey-offline';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { ADDON_MOD_SURVEY_COMPONENT } from '@addons/mod/survey/constants';
 
 const ROOT_CACHE_KEY = 'mmaModSurvey:';
 
@@ -33,7 +35,7 @@ const ROOT_CACHE_KEY = 'mmaModSurvey:';
 @Injectable( { providedIn: 'root' })
 export class AddonModSurveyProvider {
 
-    static readonly COMPONENT = 'mmaModSurvey';
+    static readonly COMPONENT = ADDON_MOD_SURVEY_COMPONENT;
 
     /**
      * Get a survey's questions.

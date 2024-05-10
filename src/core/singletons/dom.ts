@@ -537,10 +537,12 @@ export class CoreDom {
      *
      * @param element Element to listen to events.
      * @param callback Callback to call when clicked or the key is pressed.
+     * @param setTabIndex Whether to set tabindex and role.
      */
     static initializeClickableElementA11y(
         element: HTMLElement & {disabled?: boolean},
         callback: (event: MouseEvent | KeyboardEvent) => void,
+        setTabIndex = true,
     ): void {
         const enabled = () => !CoreUtils.isTrueOrOne(element.dataset.disabledA11yClicks ?? 'false');
 
@@ -563,14 +565,14 @@ export class CoreDom {
             }
 
             if (event.key === ' ' || event.key === 'Enter') {
+                callback(event);
+
                 event.preventDefault();
                 event.stopPropagation();
-
-                callback(event);
             }
         });
 
-        if (element.tagName !== 'BUTTON' && element.tagName !== 'A') {
+        if (setTabIndex && element.tagName !== 'BUTTON' && element.tagName !== 'A') {
             // Set tabindex if not previously set.
             if (element.getAttribute('tabindex') === null) {
                 element.setAttribute('tabindex', element.disabled ? '-1' : '0');
@@ -615,6 +617,54 @@ export class CoreDom {
         }
 
         return value;
+    }
+
+    /**
+     * Replace tags on HTMLElement.
+     *
+     * @param element HTML Element where to replace the tags.
+     * @param originTags Origin tag to be replaced.
+     * @param destinationTags Destination tag to replace.
+     * @returns Element with tags replaced.
+     */
+    static replaceTags<T extends HTMLElement = HTMLElement>(
+        element: T,
+        originTags: string | string[],
+        destinationTags: string | string[],
+    ): T {
+        if (typeof originTags === 'string') {
+            originTags = [originTags];
+        }
+
+        if (typeof destinationTags === 'string') {
+            destinationTags = [destinationTags];
+        }
+
+        if (originTags.length !== destinationTags.length) {
+            // Do nothing, incorrect input.
+            return element;
+        }
+
+        originTags.forEach((originTag, index) => {
+            const destinationTag = destinationTags[index];
+            const elems = Array.from(element.getElementsByTagName(originTag));
+
+            elems.forEach((elem) => {
+                const newElem = document.createElement(destinationTag);
+                newElem.innerHTML = elem.innerHTML;
+
+                if (elem.hasAttributes()) {
+                    const attrs = Array.from(elem.attributes);
+                    attrs.forEach((attr) => {
+                        newElem.setAttribute(attr.name, attr.value);
+                    });
+                }
+
+                elem.parentNode?.replaceChild(newElem, elem);
+            });
+        });
+
+        return element;
     }
 
 }

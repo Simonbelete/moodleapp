@@ -16,9 +16,10 @@ import { AfterViewInit, Component, ElementRef, HostBinding, OnDestroy } from '@a
 
 import { CoreUtils } from '@services/utils/utils';
 import { ModalController, Translate } from '@singletons';
-import { CoreLoginHelperProvider, GET_STARTED_URL } from '@features/login/services/login-helper';
+import { FAQ_QRCODE_IMAGE_HTML, FAQ_URL_IMAGE_HTML, GET_STARTED_URL } from '@features/login/constants';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreCancellablePromise } from '@classes/cancellable-promise';
+import { SubPartial } from '@/core/utils/types';
 
 /**
  * Component that displays help to connect to a site.
@@ -39,8 +40,8 @@ export class CoreLoginSiteHelpComponent implements AfterViewInit, OnDestroy {
     constructor(protected el: ElementRef<HTMLElement>) {
         const getStartedTitle = Translate.instant('core.login.faqsetupsitelinktitle');
         const canScanQR = CoreUtils.canScanQR();
-        const urlImageHtml = CoreLoginHelperProvider.FAQ_URL_IMAGE_HTML;
-        const qrCodeImageHtml = CoreLoginHelperProvider.FAQ_QRCODE_IMAGE_HTML;
+        const urlImageHtml = FAQ_URL_IMAGE_HTML;
+        const qrCodeImageHtml = FAQ_QRCODE_IMAGE_HTML;
         const setupLinkHtml = `<a href="${GET_STARTED_URL}" title="${getStartedTitle}">${GET_STARTED_URL}</a>`;
         const questions: Array<QuestionDefinition | false> = [
             {
@@ -217,5 +218,5 @@ enum AnswerFormat {
  * Question definition.
  */
 type QuestionDefinition = Omit<Question, 'id' | 'answer'> & {
-    answer: Omit<Answer, 'class'> & Partial<Pick<Answer, 'class'>>;
+    answer: SubPartial<Answer, 'class'>;
 };

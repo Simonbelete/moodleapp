@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { AlertOptions } from '@ionic/core';
 import {
     AddonCalendar,
@@ -41,6 +40,9 @@ import { AddonCalendarEventsSource } from '@addons/calendar/classes/events-sourc
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
 import { CoreReminders, CoreRemindersService } from '@features/reminders/services/reminders';
 import { CoreRemindersSetReminderMenuComponent } from '@features/reminders/components/set-reminder-menu/set-reminder-menu';
+import { CoreLocalNotifications } from '@services/local-notifications';
+import { CorePlatform } from '@services/platform';
+import { CoreConfig } from '@services/config';
 
 /**
  * Page that displays a single calendar event.
@@ -62,6 +64,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
     protected defaultTimeChangedObserver: CoreEventObserver;
     protected currentSiteId: string;
     protected updateCurrentTime?: number;
+    protected appResumeSubscription: Subscription;
 
     eventLoaded = false;
     event?: AddonCalendarEventToDisplay;
@@ -79,6 +82,8 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
     hasOffline = false;
     isOnline = false;
     syncIcon = CoreConstants.ICON_LOADING; // Sync icon.
+    canScheduleExactAlarms = true;
+    scheduleExactWarningHidden = false;
 
     constructor(
         protected route: ActivatedRoute,
@@ -139,6 +144,11 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         this.updateCurrentTime = window.setInterval(() => {
             this.currentTime = CoreTimeUtils.timestamp();
         }, 5000);
+
+        this.checkExactAlarms();
+        this.appResumeSubscription = CorePlatform.resume.subscribe(() => {
+            this.checkExactAlarms();
+        });
     }
 
     /**
@@ -152,6 +162,14 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         }
 
         this.reminders = await AddonCalendarHelper.getEventReminders(this.eventId, this.event.timestart, this.currentSiteId);
+    }
+
+    /**
+     * Check if the app can schedule exact alarms.
+     */
+    protected async checkExactAlarms(): Promise<void> {
+        this.scheduleExactWarningHidden = !!(await CoreConfig.get(CoreConstants.DONT_SHOW_EXACT_ALARMS_WARNING, 0));
+        this.canScheduleExactAlarms = await CoreLocalNotifications.canScheduleExactAlarms();
     }
 
     /**
@@ -419,7 +437,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
      * @param showErrors Whether to show sync errors to the user.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher, done?: () => void, showErrors= false): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement, done?: () => void, showErrors= false): Promise<void> {
         if (!this.eventLoaded) {
             return;
         }
@@ -618,6 +636,21 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
     }
 
     /**
+     * Open alarm settings.
+     */
+    openAlarmSettings(): void {
+        CoreLocalNotifications.openAlarmSettings();
+    }
+
+    /**
+     * Hide alarm warning.
+     */
+    hideAlarmWarning(): void {
+        CoreConfig.set(CoreConstants.DONT_SHOW_EXACT_ALARMS_WARNING, 1);
+        this.scheduleExactWarningHidden = true;
+    }
+
+    /**
      * @inheritdoc
      */
     ngOnDestroy(): void {
@@ -627,6 +660,7 @@ export class AddonCalendarEventPage implements OnInit, OnDestroy {
         this.onlineObserver.unsubscribe();
         this.newEventObserver.off();
         this.events?.destroy();
+        this.appResumeSubscription.unsubscribe();
         clearInterval(this.updateCurrentTime);
     }
 
@@ -640,8 +674,10 @@ class AddonCalendarEventsSwipeItemsManager extends CoreSwipeNavigationItemsManag
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return route.params.id;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return snapshot.params.id;
     }
 
 }

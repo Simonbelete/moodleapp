@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CorePlatform } from '@services/platform';
 import { CoreSites } from '@services/sites';
 import { CoreStorage } from '@services/storage';
@@ -267,7 +267,7 @@ export enum CoreAutoLogoutType {
      * then, the user must login again.
      */
     CUSTOM = 2,
-};
+}
 
 export type CoreAutoLogoutConfig = CoreAutoLogoutSessionConfig | CoreAutoLogoutOtherConfig;
 

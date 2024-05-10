@@ -13,8 +13,8 @@
 // limitations under the License.
 
 import { Injectable } from '@angular/core';
-import { ILocalNotification } from '@ionic-native/local-notifications';
-import { NotificationEventResponse, PushOptions, RegistrationEventResponse } from '@moodlehq/ionic-native-push/ngx';
+import { ILocalNotification } from '@awesome-cordova-plugins/local-notifications';
+import { NotificationEventResponse, PushOptions, RegistrationEventResponse } from '@awesome-cordova-plugins/push/ngx';
 
 import { CoreApp } from '@services/app';
 import { CoreSites } from '@services/sites';
@@ -24,8 +24,8 @@ import { CoreUtils } from '@services/utils/utils';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreConfig } from '@services/config';
 import { CoreConstants } from '@/core/constants';
-import { CoreSite, CoreSiteInfo } from '@classes/site';
-import { makeSingleton, Badge, Push, Device, Translate, ApplicationInit, NgZone } from '@singletons';
+import { CoreSite } from '@classes/sites/site';
+import { makeSingleton, Badge, Device, Translate, ApplicationInit, NgZone } from '@singletons';
 import { CoreLogger } from '@singletons/logger';
 import { CoreEvents } from '@singletons/events';
 import {
@@ -36,6 +36,10 @@ import {
     CorePushNotificationsPendingUnregisterDBRecord,
     CorePushNotificationsRegisteredDeviceDBRecord,
     CorePushNotificationsBadgeDBRecord,
+    REGISTERED_DEVICES_TABLE_PRIMARY_KEYS,
+    CorePushNotificationsRegisteredDeviceDBPrimaryKeys,
+    CorePushNotificationsBadgeDBPrimaryKeys,
+    BADGE_TABLE_PRIMARY_KEYS,
 } from './database/pushnotifications';
 import { CoreError } from '@classes/errors/error';
 import { CoreWSExternalWarning } from '@services/ws';
@@ -48,6 +52,8 @@ import { CoreObject } from '@singletons/object';
 import { lazyMap, LazyMap } from '@/core/utils/lazy-map';
 import { CorePlatform } from '@services/platform';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
+import { CoreSiteInfo } from '@classes/sites/unauthenticated-site';
+import { Push } from '@features/native/plugins';
 
 /**
  * Service to handle push notifications.
@@ -59,23 +65,38 @@ export class CorePushNotificationsProvider {
 
     protected logger: CoreLogger;
     protected pushID?: string;
-    protected badgesTable = asyncInstance<CoreDatabaseTable<CorePushNotificationsBadgeDBRecord, 'siteid' | 'addon'>>();
+    protected badgesTable =
+        asyncInstance<CoreDatabaseTable<CorePushNotificationsBadgeDBRecord, CorePushNotificationsBadgeDBPrimaryKeys>>();
+
     protected pendingUnregistersTable =
         asyncInstance<CoreDatabaseTable<CorePushNotificationsPendingUnregisterDBRecord, 'siteid'>>();
 
     protected registeredDevicesTables:
-        LazyMap<AsyncInstance<CoreDatabaseTable<CorePushNotificationsRegisteredDeviceDBRecord, 'appid' | 'uuid'>>>;
+        LazyMap<
+            AsyncInstance<
+                CoreDatabaseTable<
+                    CorePushNotificationsRegisteredDeviceDBRecord,
+                    CorePushNotificationsRegisteredDeviceDBPrimaryKeys,
+                    never
+                >
+            >
+        >;
 
     constructor() {
         this.logger = CoreLogger.getInstance('CorePushNotificationsProvider');
         this.registeredDevicesTables = lazyMap(
             siteId => asyncInstance(
-                () => CoreSites.getSiteTable<CorePushNotificationsRegisteredDeviceDBRecord, 'appid' | 'uuid'>(
+                () => CoreSites.getSiteTable<
+                    CorePushNotificationsRegisteredDeviceDBRecord,
+                    CorePushNotificationsRegisteredDeviceDBPrimaryKeys,
+                    never
+                >(
                     REGISTERED_DEVICES_TABLE_NAME,
                     {
                         siteId,
                         config: { cachingStrategy: CoreDatabaseCachingStrategy.None },
-                        primaryKeyColumns: ['appid', 'uuid'],
+                        primaryKeyColumns: [...REGISTERED_DEVICES_TABLE_PRIMARY_KEYS],
+                        rowIdColumn: null,
                         onDestroy: () => delete this.registeredDevicesTables[siteId],
                     },
                 ),
@@ -183,16 +204,16 @@ export class CorePushNotificationsProvider {
     protected async initializeDatabase(): Promise<void> {
         try {
             await CoreApp.createTablesFromSchema(APP_SCHEMA);
-        } catch (e) {
+        } catch {
             // Ignore errors.
         }
 
         const database = CoreApp.getDB();
-        const badgesTable = new CoreDatabaseTableProxy<CorePushNotificationsBadgeDBRecord, 'siteid' | 'addon'>(
+        const badgesTable = new CoreDatabaseTableProxy<CorePushNotificationsBadgeDBRecord, CorePushNotificationsBadgeDBPrimaryKeys>(
             { cachingStrategy: CoreDatabaseCachingStrategy.Eager },
             database,
             BADGE_TABLE_NAME,
-            ['siteid', 'addon'],
+            [...BADGE_TABLE_PRIMARY_KEYS],
         );
         const pendingUnregistersTable = new CoreDatabaseTableProxy<CorePushNotificationsPendingUnregisterDBRecord, 'siteid'>(
             { cachingStrategy: CoreDatabaseCachingStrategy.Eager },
@@ -841,7 +862,7 @@ export class CorePushNotificationsProvider {
                 result.siteid,
                 result.siteurl,
                 result.token,
-                CoreTextUtils.parseJSON<CoreSiteInfo | null>(result.info, null) || undefined,
+                { info: CoreTextUtils.parseJSON<CoreSiteInfo | null>(result.info, null) || undefined },
             );
 
             await this.unregisterDeviceOnMoodle(tmpSite);

@@ -19,11 +19,12 @@ import { CoreWSExternalWarning } from '@services/ws';
 import { CoreTextUtils } from '@services/utils/text';
 import { CoreTimeUtils } from '@services/utils/time';
 import { CoreUser, USER_NOREPLY_USER } from '@features/user/services/user';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreLogger } from '@singletons/logger';
 import { Translate, makeSingleton } from '@singletons';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
 import { AddonNotificationsPushNotification } from './handlers/push-click';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 
 declare module '@singletons/events' {
 
@@ -118,7 +119,7 @@ export class AddonNotificationsProvider {
             notification.notif = 1;
             notification.read = notification.timeread > 0;
 
-            if (typeof notification.customdata == 'string') {
+            if (typeof notification.customdata === 'string') {
                 notification.customdata = CoreTextUtils.parseJSON<Record<string, string|number>>(notification.customdata, {});
             }
 
@@ -141,9 +142,6 @@ export class AddonNotificationsProvider {
                 }
             }
 
-            const imgUrl = notification.customdata?.notificationpictureurl || notification.customdata?.notificationiconurl;
-            notification.imgUrl = imgUrl ? String(imgUrl) : undefined;
-
             if (notification.useridfrom > 0) {
                 // Try to get the profile picture of the user.
                 try {
@@ -153,6 +151,12 @@ export class AddonNotificationsProvider {
                     notification.userfromfullname = user.fullname;
                 } catch {
                     // Error getting user. This can happen if device is offline or the user is deleted.
+                }
+            } else {
+                // Do not assign avatar for newlogin notifications.
+                if (notification.eventtype !== 'newlogin') {
+                    const imgUrl = notification.customdata?.notificationpictureurl || notification.customdata?.notificationiconurl;
+                    notification.imgUrl = imgUrl ? String(imgUrl) : undefined;
                 }
             }
 

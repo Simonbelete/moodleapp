@@ -14,10 +14,9 @@
 
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { Subscription } from 'rxjs';
 
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
@@ -26,7 +25,7 @@ import { CoreUserHelper } from '@features/user/services/user-helper';
 import {
     CoreUserDelegate,
     CoreUserDelegateContext,
-    CoreUserDelegateService,
+    CoreUserProfileHandlerType,
     CoreUserProfileHandlerData,
 } from '@features/user/services/user-delegate';
 import { CoreUtils } from '@services/utils/utils';
@@ -60,9 +59,8 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
     isSuspended = false;
     isEnrolled = true;
     rolesFormatted?: string;
-    actionHandlers: CoreUserProfileHandlerData[] = [];
-    newPageHandlers: CoreUserProfileHandlerData[] = [];
-    communicationHandlers: CoreUserProfileHandlerData[] = [];
+    listItemHandlers: CoreUserProfileHandlerData[] = [];
+    buttonHandlers: CoreUserProfileHandlerData[] = [];
 
     users?: CoreUserSwipeItemsManager;
 
@@ -154,20 +152,19 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
             const context = this.courseId ? CoreUserDelegateContext.COURSE : CoreUserDelegateContext.SITE;
 
             this.subscription = CoreUserDelegate.getProfileHandlersFor(user, context, this.courseId).subscribe((handlers) => {
-                this.actionHandlers = [];
-                this.newPageHandlers = [];
-                this.communicationHandlers = [];
+                this.listItemHandlers = [];
+                this.buttonHandlers = [];
                 handlers.forEach((handler) => {
                     switch (handler.type) {
-                        case CoreUserDelegateService.TYPE_COMMUNICATION:
-                            this.communicationHandlers.push(handler.data);
+                        case CoreUserProfileHandlerType.BUTTON:
+                            this.buttonHandlers.push(handler.data);
                             break;
-                        case CoreUserDelegateService.TYPE_ACTION:
-                            this.actionHandlers.push(handler.data);
+                        case CoreUserProfileHandlerType.LIST_ACCOUNT_ITEM:
+                            // Discard this for now.
                             break;
-                        case CoreUserDelegateService.TYPE_NEW_PAGE:
+                        case CoreUserProfileHandlerType.LIST_ITEM:
                         default:
-                            this.newPageHandlers.push(handler.data);
+                            this.listItemHandlers.push(handler.data);
                             break;
                     }
                 });
@@ -188,7 +185,7 @@ export class CoreUserProfilePage implements OnInit, OnDestroy {
      * @param event Event.
      * @returns Promise resolved when done.
      */
-    async refreshUser(event?: IonRefresher): Promise<void> {
+    async refreshUser(event?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(Promise.all([
             CoreUser.invalidateUserCache(this.userId),
             CoreCourses.invalidateUserNavigationOptions(),
@@ -254,8 +251,10 @@ class CoreUserSwipeItemsManager extends CoreSwipeNavigationItemsManager {
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return route.params.userId;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return snapshot.params.userId;
     }
 
 }

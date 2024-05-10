@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, OnDestroy, ViewChild, ElementRef, OnInit, Optional } from '@angular/core';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { FormControl } from '@angular/forms';
 import { CoreEvents, CoreEventObserver } from '@singletons/events';
 import { CoreGroup, CoreGroups, CoreGroupsProvider } from '@services/groups';
@@ -34,7 +34,6 @@ import { CoreSync } from '@services/sync';
 import { AddonModForumDiscussionOptions, AddonModForumOffline } from '@addons/mod/forum/services/forum-offline';
 import { CoreUtils } from '@services/utils/utils';
 import { AddonModForumHelper } from '@addons/mod/forum/services/forum-helper';
-import { IonRefresher } from '@ionic/angular';
 import { CoreFileUploader } from '@features/fileuploader/services/fileuploader';
 import { CoreTextUtils } from '@services/utils/text';
 import { CanLeave } from '@guards/can-leave';
@@ -71,7 +70,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
     @ViewChild(CoreEditorRichTextEditorComponent) messageEditor!: CoreEditorRichTextEditorComponent;
 
     component = AddonModForumProvider.COMPONENT;
-    messageControl = new FormControl();
+    messageControl = new FormControl<string | null>(null);
     groupsLoaded = false;
     showGroups = false;
     hasOffline = false;
@@ -266,7 +265,6 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
                         CoreSync.blockOperation(AddonModForumProvider.COMPONENT, this.syncId);
                     }
 
-                    // eslint-disable-next-line promise/no-nesting
                     return AddonModForumOffline.instance
                         .getNewDiscussion(this.forumId, this.timeCreated)
                         .then(async (discussion) => {
@@ -454,7 +452,7 @@ export class AddonModForumNewDiscussionPage implements OnInit, OnDestroy, CanLea
      *
      * @param refresher Refresher.
      */
-    refreshGroups(refresher?: IonRefresher): void {
+    refreshGroups(refresher?: HTMLIonRefresherElement): void {
         const promises = [
             CoreGroups.invalidateActivityGroupMode(this.cmId),
             CoreGroups.invalidateActivityAllowedGroups(this.cmId),
@@ -701,8 +699,10 @@ class AddonModForumNewDiscussionDiscussionsSwipeManager extends AddonModForumDis
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return `${this.getSource().DISCUSSIONS_PATH_PREFIX}new/${route.params.timeCreated}`;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return `${this.getSource().DISCUSSIONS_PATH_PREFIX}new/${snapshot.params.timeCreated}`;
     }
 
 }

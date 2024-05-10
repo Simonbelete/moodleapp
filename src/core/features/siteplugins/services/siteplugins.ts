@@ -15,7 +15,7 @@
 import { Injectable } from '@angular/core';
 
 import { CoreConstants } from '@/core/constants';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseAnyModuleData } from '@features/course/services/course';
 import { CoreCourses } from '@features/courses/services/courses';
 import { CoreApp } from '@services/app';
@@ -32,6 +32,9 @@ import { CoreSitePluginsModuleHandler } from '../classes/handlers/module-handler
 import { CorePromisedValue } from '@classes/promised-value';
 import { CorePlatform } from '@services/platform';
 import { CoreEnrolAction, CoreEnrolInfoIcon } from '@features/enrol/services/enrol-delegate';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreUserProfileHandlerType } from '@features/user/services/user-delegate';
+import { CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT } from '../constants';
 
 const ROOT_CACHE_KEY = 'CoreSitePlugins:';
 
@@ -42,7 +45,7 @@ const ROOT_CACHE_KEY = 'CoreSitePlugins:';
 export class CoreSitePluginsProvider {
 
     static readonly COMPONENT = 'CoreSitePlugins';
-    static readonly UPDATE_COURSE_CONTENT = 'siteplugins_update_course_content';
+    static readonly UPDATE_COURSE_CONTENT = CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT;
 
     protected logger: CoreLogger;
     protected sitePlugins: {[name: string]: CoreSitePluginsHandler} = {}; // Site plugins registered.
@@ -389,16 +392,6 @@ export class CoreSitePluginsProvider {
         const site = await CoreSites.getSite(siteId);
 
         await site.invalidateWsCacheForKey(this.getContentCacheKey(component, callback, args || {}));
-    }
-
-    /**
-     * Check if the get content WS is available.
-     *
-     * @returns If get content WS is available.
-     * @deprecated since 4.0
-     */
-    isGetContentAvailable(): boolean {
-        return true;
     }
 
     /**
@@ -904,10 +897,6 @@ export type CoreSitePluginsCourseModuleHandlerData = CoreSitePluginsHandlerCommo
 export type CoreSitePluginsCourseFormatHandlerData = CoreSitePluginsHandlerCommonData & {
     canviewallsections?: boolean;
     displayenabledownload?: boolean;
-    /**
-     * @deprecated since 4.0. Use displaycourseindex instead.
-     */
-    displaysectionselector?: boolean;
     displaycourseindex?: boolean;
 };
 
@@ -920,7 +909,7 @@ export type CoreSitePluginsUserHandlerData = CoreSitePluginsHandlerCommonData & 
         icon?: string;
         class?: string;
     };
-    type?: string;
+    type?: CoreUserProfileHandlerType;
     priority?: number;
     ptrenabled?: boolean;
 };
@@ -1007,7 +996,7 @@ declare module '@singletons/events' {
      * @see https://www.typescriptlang.org/docs/handbook/declaration-merging.html#module-augmentation
      */
     export interface CoreEventsData {
-        [CoreSitePluginsProvider.UPDATE_COURSE_CONTENT]: CoreSitePluginsUpdateCourseContentEvent;
+        [CORE_SITE_PLUGINS_UPDATE_COURSE_CONTENT]: CoreSitePluginsUpdateCourseContentEvent;
     }
 
 }

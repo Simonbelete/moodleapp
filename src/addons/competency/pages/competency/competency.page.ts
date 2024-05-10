@@ -30,14 +30,13 @@ import {
     AddonCompetencyProvider,
 } from '@addons/competency/services/competency';
 import { CoreNavigator } from '@services/navigator';
-import { IonRefresher } from '@ionic/angular';
 import { ContextLevel } from '@/core/constants';
 import { CoreUtils } from '@services/utils/utils';
 import { ADDON_COMPETENCY_SUMMARY_PAGE } from '@addons/competency/competency.module';
 import { CoreSwipeNavigationItemsManager } from '@classes/items-management/swipe-navigation-items-manager';
 import { CoreRoutedItemsManagerSourcesTracker } from '@classes/items-management/routed-items-manager-sources-tracker';
 import { AddonCompetencyPlanCompetenciesSource } from '@addons/competency/classes/competency-plan-competencies-source';
-import { ActivatedRouteSnapshot } from '@angular/router';
+import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { AddonCompetencyCourseCompetenciesSource } from '@addons/competency/classes/competency-course-competencies-source';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
@@ -59,7 +58,7 @@ export class AddonCompetencyCompetencyPage implements OnInit, OnDestroy {
     user?: CoreUserSummary;
     competency?: AddonCompetencyDataForUserCompetencySummaryWSResponse;
     userCompetency?: AddonCompetencyUserCompetencyPlan | AddonCompetencyUserCompetency | AddonCompetencyUserCompetencyCourse;
-    contextLevel?: string;
+    contextLevel?: ContextLevel;
     contextInstanceId?: number;
 
     protected logView: () => void;
@@ -173,7 +172,7 @@ export class AddonCompetencyCompetencyPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    async refreshCompetency(refresher: IonRefresher): Promise<void> {
+    async refreshCompetency(refresher: HTMLIonRefresherElement): Promise<void> {
         const source = this.competencies.getSource();
 
         await CoreUtils.ignoreErrors(
@@ -351,8 +350,10 @@ class AddonCompetencyCompetenciesSwipeManager
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return route.params.competencyId;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return snapshot.params.competencyId;
     }
 
 }

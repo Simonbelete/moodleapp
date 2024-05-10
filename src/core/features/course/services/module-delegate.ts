@@ -14,9 +14,8 @@
 
 import { Injectable, Type } from '@angular/core';
 import { SafeUrl } from '@angular/platform-browser';
-import { IonRefresher } from '@ionic/angular';
 
-import { CoreSite } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreCourseModuleDefaultHandler } from './handlers/default-module';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { CoreCourseAnyCourseData } from '@features/courses/services/courses';
@@ -26,6 +25,7 @@ import { makeSingleton } from '@singletons';
 import { CoreCourseModuleData } from './course-helper';
 import { CoreNavigationOptions } from '@services/navigator';
 import { CoreIonicColorNames } from '@singletons/colors';
+import { DownloadStatus } from '@/core/constants';
 
 /**
  * Interface that all course module handlers must implement.
@@ -124,6 +124,14 @@ export interface CoreCourseModuleHandler extends CoreDelegateHandler {
      * @returns Promise resolved when done.
      */
     openActivityPage(module: CoreCourseModuleData, courseId: number, options?: CoreNavigationOptions): Promise<void>;
+
+    /**
+     * Whether the activity is branded.
+     * This information is used, for instance, to decide if a filter should be applied to the icon or not.
+     *
+     * @returns bool True if the activity is branded, false otherwise.
+     */
+    isBranded?(): Promise<boolean>;
 }
 
 /**
@@ -215,7 +223,7 @@ export interface CoreCourseModuleHandlerData {
      *
      * @param status Module status.
      */
-    updateStatus?(status: string): void;
+    updateStatus?(status: DownloadStatus): void;
 
     /**
      * On Destroy function in case it's needed.
@@ -234,7 +242,7 @@ export interface CoreCourseModuleMainComponent {
      * @param showErrors If show errors to the user of hide them.
      * @returns Promise resolved when done.
      */
-    doRefresh(refresher?: IonRefresher | null, showErrors?: boolean): Promise<void>;
+    doRefresh(refresher?: HTMLIonRefresherElement | null, showErrors?: boolean): Promise<void>;
 }
 
 /**
@@ -278,7 +286,7 @@ export class CoreCourseModuleDelegateService extends CoreDelegate<CoreCourseModu
     protected handlerNameProperty = 'modName';
 
     constructor(protected defaultHandler: CoreCourseModuleDefaultHandler) {
-        super('CoreCourseModuleDelegate', true);
+        super('CoreCourseModuleDelegate');
     }
 
     /**

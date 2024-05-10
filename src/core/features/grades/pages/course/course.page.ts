@@ -14,7 +14,6 @@
 
 import { ActivatedRoute, ActivatedRouteSnapshot } from '@angular/router';
 import { AfterViewInit, Component, ElementRef, OnDestroy } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreGrades } from '@features/grades/services/grades';
@@ -185,7 +184,7 @@ export class CoreGradesCoursePage implements AfterViewInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    async refreshGrades(refresher: IonRefresher): Promise<void> {
+    async refreshGrades(refresher: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(CoreGrades.invalidateCourseGradesData(this.courseId, this.userId));
         await CoreUtils.ignoreErrors(this.fetchGrades());
 
@@ -331,8 +330,10 @@ class CoreGradesCourseParticipantsSwipeManager extends CoreSwipeNavigationItemsM
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return route.params.userId;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return snapshot.params.userId;
     }
 
 }

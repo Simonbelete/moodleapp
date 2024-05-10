@@ -14,7 +14,6 @@
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
 import { CoreCoursesHelper, CoreEnrolledCourseDataWithExtraInfo } from '@features/courses/services/courses-helper';
-import { IonRefresher } from '@ionic/angular';
 import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
@@ -50,6 +49,7 @@ export class CoreCoursesListPage implements OnInit, OnDestroy {
     coursesLoaded = 0;
     canLoadMore = false;
     loadMoreError = false;
+    loadingMessage = Translate.instant('core.loading');
 
     showOnlyEnrolled = false;
 
@@ -177,6 +177,8 @@ export class CoreCoursesListPage implements OnInit, OnDestroy {
      * @returns Promise resolved when done.
      */
     protected async loadCourses(clearTheList = false): Promise<void> {
+        this.loadingMessage = Translate.instant('core.loading');
+
         this.loadMoreError = false;
 
         try {
@@ -215,7 +217,7 @@ export class CoreCoursesListPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshCourses(refresher: IonRefresher): void {
+    refreshCourses(refresher: HTMLIonRefresherElement): void {
         const promises: Promise<void>[] = [];
 
         if (!this.searchMode) {
@@ -250,9 +252,10 @@ export class CoreCoursesListPage implements OnInit, OnDestroy {
         this.searchTotal = 0;
         this.logSearch = CoreTime.once(() => this.performLogSearch());
 
-        const modal = await CoreDomUtils.showModalLoading('core.searching', true);
+        this.loaded = false;
         await this.searchCourses().finally(() => {
-            modal.dismiss();
+            this.loaded = true;
+
         });
     }
 
@@ -311,6 +314,7 @@ export class CoreCoursesListPage implements OnInit, OnDestroy {
      */
     protected async searchCourses(): Promise<void> {
         this.loadMoreError = false;
+        this.loadingMessage = Translate.instant('core.searching');
 
         try {
             const response = await CoreCourses.search(this.searchText, this.searchPage, undefined, this.showOnlyEnrolled);

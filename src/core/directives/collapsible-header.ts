@@ -428,19 +428,15 @@ export class CoreCollapsibleHeaderDirective implements OnInit, OnChanges, OnDest
             return;
         }
 
-        // Wait loadings to finish.
-        await CoreDirectivesRegistry.waitDirectivesReady(this.page, 'core-loading', CoreLoadingComponent);
+        // Make sure elements have been added to the DOM.
+        await CoreUtils.nextTick();
 
-        // Wait tabs to be ready.
-        await CoreDirectivesRegistry.waitDirectivesReady(this.page, 'core-tabs', CoreTabsComponent);
-        await CoreDirectivesRegistry.waitDirectivesReady(this.page, 'core-tabs-outlet', CoreTabsOutletComponent);
-
-        // Wait loadings to finish, inside tabs (if any).
-        await CoreDirectivesRegistry.waitDirectivesReady(
-            this.page,
-            'core-tab core-loading, ion-router-outlet core-loading',
-            CoreLoadingComponent,
-        );
+        // Wait all loadings and tabs to finish loading.
+        await CoreDirectivesRegistry.waitMultipleDirectivesReady(this.page, [
+            { selector: 'core-loading', class: CoreLoadingComponent },
+            { selector: 'core-tabs', class: CoreTabsComponent },
+            { selector: 'core-tabs-outlet', class: CoreTabsOutletComponent },
+        ]);
     }
 
     /**
@@ -551,15 +547,8 @@ export class CoreCollapsibleHeaderDirective implements OnInit, OnChanges, OnDest
                 return;
             }
 
-            const scrollableHeight = contentScroll.scrollHeight - contentScroll.clientHeight;
+            const frozen = this.isFrozen(contentScroll);
 
-            let frozen = false;
-            if (this.isWithinContent) {
-                frozen = scrollableHeight <= scrollingHeight;
-            } else {
-                const collapsedHeight = expandedHeaderHeight - (expandedHeader.clientHeight ?? 0);
-                frozen = scrollableHeight + collapsedHeight <= 2 * expandedHeaderHeight;
-            }
             const progress = frozen
                 ? 0
                 : CoreMath.clamp(contentScroll.scrollTop / scrollingHeight, 0, 1);
@@ -581,7 +570,14 @@ export class CoreCollapsibleHeaderDirective implements OnInit, OnChanges, OnDest
                 }
 
                 if (page.classList.contains('collapsible-header-page-is-frozen')) {
-                    return;
+                    // Check it has to be frozen.
+                    const frozen = this.isFrozen(contentScroll);
+
+                    if (frozen) {
+                        return;
+                    }
+
+                    page.classList.toggle('collapsible-header-page-is-frozen', frozen);
                 }
 
                 const progress = parseFloat(page.style.getPropertyValue('--collapsible-header-progress'));
@@ -600,6 +596,30 @@ export class CoreCollapsibleHeaderDirective implements OnInit, OnChanges, OnDest
                 }
             },
         );
+    }
+
+    /**
+     * Check if the header is frozen.
+     *
+     * @param contentScroll Content scroll element.
+     * @returns Whether the header is frozen or not.
+     */
+    protected isFrozen(contentScroll: HTMLElement): boolean {
+        const scrollingHeight = this.scrollingHeight ?? 0;
+        const expandedHeaderClientHeight = this.expandedHeader?.clientHeight ?? 0;
+        const expandedHeaderHeight = this.expandedHeaderHeight ?? 0;
+
+        const scrollableHeight = contentScroll.scrollHeight - contentScroll.clientHeight;
+
+        let frozen = false;
+        if (this.isWithinContent) {
+            frozen = scrollableHeight <= scrollingHeight;
+        } else {
+            const collapsedHeight = expandedHeaderHeight - (expandedHeaderClientHeight);
+            frozen = scrollableHeight + collapsedHeight <= 2 * expandedHeaderHeight;
+        }
+
+        return frozen;
     }
 
 }

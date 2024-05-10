@@ -14,7 +14,7 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { CoreInterceptor } from '@classes/interceptor';
 import { CoreWSExternalWarning, CoreWSExternalFile, CoreWSFile } from '@services/ws';
 import { makeSingleton, Translate } from '@singletons';
@@ -35,6 +35,8 @@ import { AddonModAssignAutoSyncData, AddonModAssignManualSyncData, AddonModAssig
 import { CoreFormFields } from '@singletons/form';
 import { CoreFileHelper } from '@services/file-helper';
 import { CoreIonicColorNames } from '@singletons/colors';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { ContextLevel } from '@/core/constants';
 
 const ROOT_CACHE_KEY = 'mmaModAssign:';
 
@@ -756,7 +758,7 @@ export class AddonModAssignProvider {
         promises.push(this.invalidateAssignmentUserMappingsData(assign.id, siteId));
         promises.push(this.invalidateAssignmentGradesData(assign.id, siteId));
         promises.push(this.invalidateListParticipantsData(assign.id, siteId));
-        promises.push(CoreComments.invalidateCommentsByInstance('module', assign.id, siteId));
+        promises.push(CoreComments.invalidateCommentsByInstance(ContextLevel.MODULE, assign.id, siteId));
         promises.push(this.invalidateAssignmentData(courseId, siteId));
         promises.push(CoreGrades.invalidateAllCourseGradesData(courseId));
 

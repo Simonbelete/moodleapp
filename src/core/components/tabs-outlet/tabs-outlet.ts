@@ -15,7 +15,6 @@
 import {
     Component,
     Input,
-    OnInit,
     OnChanges,
     OnDestroy,
     AfterViewInit,
@@ -23,12 +22,11 @@ import {
     SimpleChange,
 } from '@angular/core';
 import { IonRouterOutlet, IonTabs, ViewDidEnter, ViewDidLeave } from '@ionic/angular';
-import { Subscription } from 'rxjs';
 
 import { CoreUtils } from '@services/utils/utils';
 import { Params } from '@angular/router';
 import { CoreNavBarButtonsComponent } from '../navbar-buttons/navbar-buttons';
-import { StackEvent } from '@ionic/angular/directives/navigation/stack-utils';
+import { StackDidChangeEvent } from '@ionic/angular/common/directives/navigation/stack-utils';
 import { CoreNavigator } from '@services/navigator';
 import { CoreTabBase, CoreTabsBaseComponent } from '@classes/tabs';
 import { CoreDirectivesRegistry } from '@singletons/directives-registry';
@@ -53,7 +51,7 @@ import { CoreDirectivesRegistry } from '@singletons/directives-registry';
     styleUrls: ['../tabs/tabs.scss'],
 })
 export class CoreTabsOutletComponent extends CoreTabsBaseComponent<CoreTabsOutletTab>
-    implements OnInit, AfterViewInit, OnChanges, OnDestroy {
+    implements AfterViewInit, OnChanges, OnDestroy {
 
     /**
      * Determine tabs layout.
@@ -63,8 +61,6 @@ export class CoreTabsOutletComponent extends CoreTabsBaseComponent<CoreTabsOutle
 
     @ViewChild(IonTabs) protected ionTabs!: IonTabs;
 
-    protected stackEventsSubscription?: Subscription;
-    protected outletActivatedSubscription?: Subscription;
     protected lastActiveComponent?: Partial<ViewDidLeave>;
     protected existsInNavigationStack = false;
 
@@ -90,7 +86,7 @@ export class CoreTabsOutletComponent extends CoreTabsBaseComponent<CoreTabsOutle
             return;
         }
 
-        this.stackEventsSubscription = this.ionTabs.outlet.stackEvents.subscribe(async (stackEvent: StackEvent) => {
+        this.subscriptions.push(this.ionTabs.outlet.stackDidChange.subscribe(async (stackEvent: StackDidChangeEvent) => {
             if (!this.isCurrentView) {
                 return;
             }
@@ -110,10 +106,10 @@ export class CoreTabsOutletComponent extends CoreTabsBaseComponent<CoreTabsOutle
             }
 
             this.showHideNavBarButtons(stackEvent.enteringView.element.tagName);
-        });
-        this.outletActivatedSubscription = this.ionTabs.outlet.activateEvents.subscribe(() => {
+        }));
+        this.subscriptions.push(this.ionTabs.outlet.activateEvents.subscribe(() => {
             this.lastActiveComponent = this.ionTabs.outlet.component;
-        });
+        }));
     }
 
     /**
@@ -221,8 +217,6 @@ export class CoreTabsOutletComponent extends CoreTabsBaseComponent<CoreTabsOutle
      */
     ngOnDestroy(): void {
         super.ngOnDestroy();
-        this.stackEventsSubscription?.unsubscribe();
-        this.outletActivatedSubscription?.unsubscribe();
         this.existsInNavigationStack = false;
     }
 

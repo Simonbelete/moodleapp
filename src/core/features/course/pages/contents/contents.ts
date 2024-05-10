@@ -13,7 +13,7 @@
 // limitations under the License.
 
 import { Component, ViewChild, OnInit, OnDestroy, forwardRef, ChangeDetectorRef } from '@angular/core';
-import { IonContent, IonRefresher } from '@ionic/angular';
+import { IonContent } from '@ionic/angular';
 
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUtils } from '@services/utils/utils';
@@ -21,10 +21,13 @@ import { CoreCourses, CoreCourseAnyCourseData } from '@features/courses/services
 import {
     CoreCourse,
     CoreCourseCompletionActivityStatus,
+    CoreCourseModuleCompletionStatus,
+    CoreCourseProvider,
 } from '@features/course/services/course';
 import {
     CoreCourseHelper,
     CoreCourseModuleCompletionData,
+    CoreCourseModuleData,
     CoreCourseSection,
 } from '@features/course/services/course-helper';
 import { CoreCourseFormatDelegate } from '@features/course/services/format-delegate';
@@ -37,6 +40,8 @@ import {
 } from '@singletons/events';
 import { CoreNavigator } from '@services/navigator';
 import { CoreRefreshContext, CORE_REFRESH_CONTEXT } from '@/core/utils/refresh-context';
+import { CoreCoursesHelper } from '@features/courses/services/courses-helper';
+import { CoreSites } from '@services/sites';
 
 /**
  * Page that displays the contents of a course.
@@ -221,7 +226,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
         let completionStatus: Record<string, CoreCourseCompletionActivityStatus> = {};
 
         // Get the completion status.
-        if (this.course.enablecompletion !== false) {
+        if (CoreCoursesHelper.isCompletionEnabledInCourse(this.course)) {
             const sectionWithModules = sections.find((section) => section.modules.length > 0);
 
             if (sectionWithModules && sectionWithModules.modules[0].completion !== undefined) {
@@ -265,7 +270,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
     protected async loadCourseFormatOptions(): Promise<void> {
 
         // Load the course format options when course completion is enabled to show completion progress on sections.
-        if (!this.course.enablecompletion) {
+        if (!CoreCoursesHelper.isCompletionEnabledInCourse(this.course)) {
             return;
         }
 
@@ -291,7 +296,7 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
         await CoreUtils.ignoreErrors(this.invalidateData());
 
         try {
@@ -314,20 +319,49 @@ export class CoreCourseContentsPage implements OnInit, OnDestroy, CoreRefreshCon
      * @returns Promise resolved when done.
      */
     async onCompletionChange(completionData: CoreCourseModuleCompletionData): Promise<void> {
-        const shouldReload = completionData.valueused === undefined || completionData.valueused;
-
-        if (!shouldReload) {
-            // Invalidate the completion.
-            await CoreUtils.ignoreErrors(CoreCourse.invalidateSections(this.course.id));
-
-            this.debouncedUpdateCachedCompletion?.();
-
+        if (completionData.courseId != this.course?.id) {
             return;
         }
 
-        await CoreUtils.ignoreErrors(this.invalidateData());
+        const siteId = CoreSites.getCurrentSiteId();
+        const shouldReload = completionData.valueused === true;
 
-        await this.showLoadingAndRefresh(true, false);
+        if (!shouldReload) {
+
+            if (!this.course || !('progress' in this.course) || typeof this.course.progress != 'number') {
+                return;
+            }
+
+            if (this.sections) {
+                // If the completion value is not used, the page won't be reloaded, so update the progress bar.
+                const completionModules = (<CoreCourseModuleData[]> [])
+                    .concat(...this.sections.map((section) => section.modules))
+                    .map((module) => module.completion && module.completion > 0 ? 1 : module.completion)
+                    .reduce((accumulator, currentValue) => (accumulator || 0) + (currentValue || 0), 0);
+
+                const moduleProgressPercent = 100 / (completionModules || 1);
+                // Use min/max here to avoid floating point rounding errors over/under-flowing the progress bar.
+                if (completionData.state === CoreCourseModuleCompletionStatus.COMPLETION_COMPLETE) {
+                    this.course.progress = Math.min(100, this.course.progress + moduleProgressPercent);
+                } else {
+                    this.course.progress = Math.max(0, this.course.progress - moduleProgressPercent);
+                }
+            }
+
+            await CoreUtils.ignoreErrors(this.invalidateData());
+            this.debouncedUpdateCachedCompletion?.();
+        } else {
+            await CoreUtils.ignoreErrors(this.invalidateData());
+            await this.showLoadingAndRefresh(true, false);
+        }
+
+        if (!('progress' in this.course) || this.course.progress === undefined || this.course.progress === null) {
+            return;
+        }
+
+        CoreEvents.trigger(CoreCourseProvider.PROGRESS_UPDATED, {
+            courseId: this.course.id, progress: this.course.progress,
+        }, siteId);
     }
 
     /**

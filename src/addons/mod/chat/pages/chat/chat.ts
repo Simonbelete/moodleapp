@@ -26,7 +26,7 @@ import { NgZone, Translate } from '@singletons';
 import { CoreEvents } from '@singletons/events';
 import { Subscription } from 'rxjs';
 import { AddonModChatUsersModalComponent, AddonModChatUsersModalResult } from '../../components/users-modal/users-modal';
-import { AddonModChat, AddonModChatProvider, AddonModChatUser } from '../../services/chat';
+import { AddonModChat, AddonModChatUser } from '../../services/chat';
 import { AddonModChatFormattedMessage, AddonModChatHelper } from '../../services/chat-helper';
 import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
@@ -37,9 +37,11 @@ import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 @Component({
     selector: 'page-addon-mod-chat-chat',
     templateUrl: 'chat.html',
-    styleUrls: ['chat.scss'],
+    styleUrls: ['../../../../../theme/components/discussion.scss', 'chat.scss'],
 })
 export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
+
+    protected static readonly POLL_INTERVAL = 4000;
 
     @ViewChild(IonContent) content?: IonContent;
     @ViewChild(CoreSendMessageFormComponent) sendMessageForm?: CoreSendMessageFormComponent;
@@ -252,7 +254,7 @@ export class AddonModChatChatPage implements OnInit, OnDestroy, CanLeave {
         // Start polling.
         this.polling = window.setInterval(() => {
             CoreUtils.ignoreErrors(this.fetchMessagesInterval());
-        }, AddonModChatProvider.POLL_INTERVAL);
+        }, AddonModChatChatPage.POLL_INTERVAL);
     }
 
     /**

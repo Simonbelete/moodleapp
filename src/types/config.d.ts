@@ -73,4 +73,7 @@ export interface EnvironmentConfig {
     disableCallWSInBackground?: boolean; // If true, disable calling WS in background.
     callWSInBackgroundExpirationTime?: number; // Ms to consider an entry expired when calling WS in background. Default: 1 week.
     disableTokenFile: boolean; // Disable the use of tokenpluginfile.php for downloading files (so it fallbacks to pluginfile.php)
+    demoMode?: boolean; // Whether to run the app in "demo mode".
+    hideInformativeLinks?: boolean; // Whether to hide informative links.
+    iconsPrefixes?: Record<string, Record<string, string[]>>; // Prefixes for custom font icons (located in src/assets/fonts).
 }

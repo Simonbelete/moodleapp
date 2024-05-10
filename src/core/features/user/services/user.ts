@@ -20,14 +20,15 @@ import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreUserOffline } from './user-offline';
 import { CoreLogger } from '@singletons/logger';
-import { CoreSite, CoreSiteWSPreSets } from '@classes/site';
+import { CoreSite } from '@classes/sites/site';
 import { makeSingleton, Translate } from '@singletons';
 import { CoreEvents, CoreEventSiteData, CoreEventUserDeletedData, CoreEventUserSuspendedData } from '@singletons/events';
 import { CoreStatusWithWarningsWSResponse, CoreWSExternalWarning } from '@services/ws';
 import { CoreError } from '@classes/errors/error';
 import { USERS_TABLE_NAME, CoreUserDBRecord } from './database/user';
-import { CoreUserHelper } from './user-helper';
 import { CoreUrlUtils } from '@services/utils/url';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
+import { CoreConstants } from '@/core/constants';
 
 const ROOT_CACHE_KEY = 'mmUser:';
 
@@ -107,26 +108,6 @@ export class CoreUserProvider {
         site = site || CoreSites.getCurrentSite();
 
         return !!site?.wsAvailable('core_enrol_search_users');
-    }
-
-    /**
-     * Check if WS to update profile picture is available in site.
-     *
-     * @returns Promise resolved with boolean: whether it's available.
-     * @deprecated since 4.0.
-     */
-    async canUpdatePicture(): Promise<boolean> {
-        return true;
-    }
-
-    /**
-     * Check if WS to search participants is available in site.
-     *
-     * @returns Whether it's available.
-     * @deprecated since 4.0.
-     */
-    canUpdatePictureInSite(): boolean {
-        return true;
     }
 
     /**
@@ -302,6 +283,24 @@ export class CoreUserProvider {
                 throw error;
             }
         }
+    }
+
+    /**
+     * Get the starting week day based on the user preference.
+     *
+     * @returns Starting week day.
+     */
+    async getStartingWeekDay(): Promise<number> {
+        const preference = await CoreUtils.ignoreErrors(this.getUserPreference('calendar_startwday'));
+
+        if (preference && !isNaN(Number(preference))) {
+            return Number(preference);
+        }
+
+        const defaultValue = Number(CoreSites.getCurrentSite()?.getStoredConfig('calendar_startwday') ??
+            Translate.instant('core.firstdayofweek'));
+
+        return !isNaN(defaultValue) ? defaultValue % 7 : CoreConstants.CALENDAR_DEFAULT_STARTING_WEEKDAY;
     }
 
     /**
@@ -669,11 +668,8 @@ export class CoreUserProvider {
             }
 
             // Do not prefetch when initials are set and image is default.
-            if ('firstname' in entry || 'lastname' in entry) {
-                const initials = CoreUserHelper.getUserInitials(entry);
-                if (initials && imageUrl && CoreUrlUtils.isThemeImageUrl(imageUrl)) {
-                    return;
-                }
+            if (imageUrl && CoreUrlUtils.isThemeImageUrl(imageUrl)) {
+                return;
             }
 
             treated[imageUrl] = true;
@@ -966,6 +962,7 @@ export type CoreUserData = {
     theme?: string; // Theme name such as "standard", must exist on server.
     timezone?: string; // Timezone code such as Australia/Perth, or 99 for default.
     mailformat?: number; // Mail format code is 0 for plain text, 1 for HTML etc.
+    trackforums?: number; // @since 4.4. Whether the user is tracking forums.
     description?: string; // User profile description.
     descriptionformat?: number; // Int format (1 = HTML, 0 = MOODLE, 2 = PLAIN or 4 = MARKDOWN).
     city?: string; // Home city of the user.
@@ -1161,6 +1158,7 @@ type CoreEnrolSearchUsersWSParams = {
     searchanywhere: boolean; // Find a match anywhere, or only at the beginning.
     page: number; // Page number.
     perpage: number; // Number per page.
+    contextid?: number; // @since 4.4. Context ID.
 };
 
 /**

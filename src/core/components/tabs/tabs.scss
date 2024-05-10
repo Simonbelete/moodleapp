@@ -1,4 +1,4 @@
-@import "~theme/globals";
+@use "theme/globals" as *;
 
 :host {
     --tabs-background: var(--core-tabs-background);
@@ -40,16 +40,16 @@
             height: var(--height);
             --border-radius: 0;
             ion-icon {
-                font-size: 16px;
+                font-size: var(--mdl-typography-icon-fontSize-sm);
             }
         }
 
-        ion-slides {
+        swiper-container {
             text-align: center;
             line-height: 1.6rem;
             flex-grow: 1;
 
-            ion-slide {
+            swiper-slide {
                 border-bottom: 2px solid transparent;
                 min-width: 100px;
                 height: var(--height);
@@ -57,7 +57,9 @@
                 overflow: hidden;
 
                 ion-tab-button {
+                    width: 100%;
                     max-width: 100%;
+
                     ion-label {
                         text-overflow: ellipsis;
                         white-space: nowrap;

@@ -24,8 +24,8 @@ import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreUrlUtils } from '@services/utils/url';
 import { CoreH5P } from '@features/h5p/services/h5p';
-import { CoreConstants } from '@/core/constants';
-import { CoreSite } from '@classes/site';
+import { DownloadStatus } from '@/core/constants';
+import { CoreSite } from '@classes/sites/site';
 import { CoreLogger } from '@singletons/logger';
 import { CoreH5PCore, CoreH5PDisplayOptions } from '../../classes/core';
 import { CoreH5PHelper } from '../../classes/helper';
@@ -100,7 +100,7 @@ export class CoreH5PIframeComponent implements OnChanges, OnDestroy {
      */
     protected async play(): Promise<void> {
         let localUrl: string | undefined;
-        let state: string;
+        let state: DownloadStatus;
         this.onlinePlayerUrl = this.onlinePlayerUrl || CoreH5P.h5pPlayer.calculateOnlinePlayerUrl(
             this.site.getURL(),
             this.fileUrl || '',
@@ -111,7 +111,7 @@ export class CoreH5PIframeComponent implements OnChanges, OnDestroy {
         if (this.fileUrl) {
             state = await CoreFilepool.getFileStateByUrl(this.siteId, this.fileUrl);
         } else {
-            state = CoreConstants.NOT_DOWNLOADABLE;
+            state = DownloadStatus.NOT_DOWNLOADABLE;
         }
 
         if (this.siteCanDownload && CoreFileHelper.isStateDownloaded(state)) {

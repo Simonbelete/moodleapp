@@ -23,8 +23,7 @@ import { CoreCommentsCommentsComponent } from '@features/comments/components/com
 import { CoreComments } from '@features/comments/services/comments';
 import { CoreRatingInfo } from '@features/rating/services/rating';
 import { CoreTag } from '@features/tag/services/tag';
-import { FileEntry } from '@ionic-native/file/ngx';
-import { IonRefresher } from '@ionic/angular';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreNavigator } from '@services/navigator';
 import { CoreNetwork } from '@services/network';
 import { CoreDomUtils, ToastDuration } from '@services/utils/dom';
@@ -100,7 +99,7 @@ export class AddonModGlossaryEntryPage implements OnInit, OnDestroy {
         try {
             this.courseId = CoreNavigator.getRequiredRouteNumberParam('courseId');
             this.tagsEnabled = CoreTag.areTagsAvailableInSite();
-            this.commentsEnabled = !CoreComments.areCommentsDisabledInSite();
+            this.commentsEnabled = CoreComments.areCommentsEnabledInSite();
             this.cmId = CoreNavigator.getRequiredRouteNumberParam('cmId');
 
             const entrySlug = CoreNavigator.getRequiredRouteParam<string>('entrySlug');
@@ -228,7 +227,7 @@ export class AddonModGlossaryEntryPage implements OnInit, OnDestroy {
      * @param refresher Refresher.
      * @returns Promise resolved when done.
      */
-    async doRefresh(refresher?: IonRefresher): Promise<void> {
+    async doRefresh(refresher?: HTMLIonRefresherElement): Promise<void> {
         if (this.onlineEntry && this.glossary?.allowcomments && this.onlineEntry.id > 0 && this.commentsEnabled && this.comments) {
             // Refresh comments asynchronously (without blocking the current promise).
             CoreUtils.ignoreErrors(this.comments.doRefresh());
@@ -368,8 +367,10 @@ class AddonModGlossaryEntryEntriesSwipeManager
     /**
      * @inheritdoc
      */
-    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot): string | null {
-        return `${this.getSource().GLOSSARY_PATH_PREFIX}entry/${route.params.entrySlug}`;
+    protected getSelectedItemPathFromRoute(route: ActivatedRouteSnapshot | ActivatedRoute): string | null {
+        const snapshot = route instanceof ActivatedRouteSnapshot ? route : route.snapshot;
+
+        return `${this.getSource().GLOSSARY_PATH_PREFIX}entry/${snapshot.params.entrySlug}`;
     }
 
 }

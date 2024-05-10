@@ -1,4 +1,4 @@
-@core @core_course @app @javascript
+@core_courses @app @javascript
 Feature: Test basic usage of courses in app
   In order to participate in the courses while using the mobile app
   As a student
@@ -66,7 +66,7 @@ Feature: Test basic usage of courses in app
     Then I should not find "Hidden course" in the app
     And I should not find "Hidden from students" in the app
 
-  @lms_from4.0
+  @lms_from4.3
   Scenario: See my courses
     Given I entered the app as "student1"
     When the header should be "Acceptance test site" in the app
@@ -93,6 +93,10 @@ Feature: Test basic usage of courses in app
     And I press "Course 3" in the app
     Then I should find "Choice course 3" in the app
     And the header should be "Course 3" in the app
+    And the following events should have been logged for "student1" in the app:
+      | name                         |
+      | \core\event\dashboard_viewed |
+      | \core\event\mycourses_viewed |
 
   Scenario: Search for a course
     Given I entered the app as "student1"

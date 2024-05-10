@@ -20,7 +20,7 @@ import { AddonModAssignSubmissionDelegate } from '@addons/mod/assign/services/su
 import { AddonModQuizAccessRuleDelegate } from '@addons/mod/quiz/services/access-rules-delegate';
 import { CoreDelegate, CoreDelegateHandler } from '@classes/delegate';
 import { CoreError } from '@classes/errors/error';
-import { CoreSiteWSPreSets } from '@classes/site';
+import { CoreSiteWSPreSets } from '@classes/sites/authenticated-site';
 import { CoreBlockDelegate } from '@features/block/services/block-delegate';
 import { CoreCompile } from '@features/compile/services/compile';
 import { CoreCourseOptionsDelegate } from '@features/course/services/course-options-delegate';
@@ -268,13 +268,13 @@ export class CoreSitePluginsHelperProvider {
         }
 
         // Create a "fake" instance to hold all the libraries.
-        const lazyLibraries = await CoreCompile.getLazyLibraries();
         const instance = {
             // eslint-disable-next-line @typescript-eslint/naming-convention
             HANDLER_DISABLED: HANDLER_DISABLED,
         };
 
-        CoreCompile.injectLibraries(instance, lazyLibraries);
+        await CoreCompile.loadLibraries();
+        CoreCompile.injectLibraries(instance);
 
         // Add some data of the WS call result.
         const jsData = CoreSitePlugins.createDataForJS(result);
@@ -613,7 +613,6 @@ export class CoreSitePluginsHelperProvider {
                 for (const property of handlerProperties) {
                     if (property !== 'constructor' && typeof handler[property] === 'function' &&
                             typeof jsResult[property] === 'function') {
-                        // eslint-disable-next-line @typescript-eslint/ban-types
                         handler[property] = (<Function> jsResult[property]).bind(handler);
                     }
                 }
@@ -837,7 +836,6 @@ export class CoreSitePluginsHelperProvider {
                 for (const property of handlerProperties) {
                     if (property !== 'constructor' && typeof handler[property] === 'function' &&
                             typeof jsResult[property] === 'function') {
-                        // eslint-disable-next-line @typescript-eslint/ban-types
                         handler[property] = (<Function> jsResult[property]).bind(handler);
                     }
                 }

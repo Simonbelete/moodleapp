@@ -15,7 +15,7 @@
 import { Injectable } from '@angular/core';
 import { CoreError } from '@classes/errors/error';
 import { CoreFileUploader, CoreFileUploaderStoreFilesResult } from '@features/fileuploader/services/fileuploader';
-import { FileEntry } from '@ionic-native/file/ngx';
+import { FileEntry } from '@awesome-cordova-plugins/file/ngx';
 import { CoreFile } from '@services/file';
 import { CoreFileEntry } from '@services/file-helper';
 import { CoreSites } from '@services/sites';
@@ -391,7 +391,7 @@ export class AddonModWorkshopHelperProvider {
         files: CoreFileEntry[],
         offline: false,
         siteId?: string,
-    ): Promise<number>
+    ): Promise<number>;
     uploadOrStoreAssessmentFiles(
         workshopId: number,
         assessmentId: number,

@@ -13,7 +13,6 @@
 // limitations under the License.
 
 import { Component, OnDestroy, OnInit } from '@angular/core';
-import { IonRefresher } from '@ionic/angular';
 import { Md5 } from 'ts-md5/dist/md5';
 
 import { CoreNetwork } from '@services/network';
@@ -140,7 +139,7 @@ export class AddonPrivateFilesIndexPage implements OnInit, OnDestroy {
      *
      * @param refresher Refresher.
      */
-    refreshData(refresher?: IonRefresher): void {
+    refreshData(refresher?: HTMLIonRefresherElement): void {
         this.refreshFiles().finally(() => {
             refresher?.complete();
         });
@@ -268,7 +267,7 @@ export class AddonPrivateFilesIndexPage implements OnInit, OnDestroy {
             params.filename = '';
         }
 
-        const hash = <string> Md5.hashAsciiStr(JSON.stringify(params));
+        const hash = Md5.hashAsciiStr(JSON.stringify(params));
 
         CoreNavigator.navigate(`../${hash}`, { params });
     }

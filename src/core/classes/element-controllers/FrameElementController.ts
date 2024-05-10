@@ -16,10 +16,8 @@ import { ElementController } from './ElementController';
 
 /**
  * Possible types of frame elements.
- *
- * @todo Remove frame TAG support.
  */
-export type FrameElement = HTMLIFrameElement | HTMLFrameElement | HTMLObjectElement | HTMLEmbedElement;
+export type FrameElement = HTMLIFrameElement | HTMLObjectElement | HTMLEmbedElement;
 
 /**
  * Wrapper class to control the interactivity of a frame element.

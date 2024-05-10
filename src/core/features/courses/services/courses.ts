@@ -14,19 +14,18 @@
 
 import { Injectable } from '@angular/core';
 import { CoreSites, CoreSitesCommonWSOptions, CoreSitesReadingStrategy } from '@services/sites';
-import { CoreSite, CoreSiteWSPreSets, WSObservable } from '@classes/site';
+import { CoreSite  } from '@classes/sites/site';
 import { makeSingleton } from '@singletons';
 import { CoreWarningsWSResponse, CoreWSExternalFile, CoreWSExternalWarning } from '@services/ws';
 import { CoreEvents } from '@singletons/events';
 import { CoreCourseAnyCourseDataWithExtraInfoAndOptions, CoreCourseWithImageAndColor } from './courses-helper';
-import { asyncObservable, firstValueFrom, ignoreErrors, zipIncludingComplete } from '@/core/utils/rxjs';
-import { of } from 'rxjs';
+import { asyncObservable, ignoreErrors, zipIncludingComplete } from '@/core/utils/rxjs';
+import { of, firstValueFrom } from 'rxjs';
 import { map } from 'rxjs/operators';
 import { AddonEnrolGuest, AddonEnrolGuestInfo } from '@addons/enrol/guest/services/guest';
 import { AddonEnrolSelf } from '@addons/enrol/self/services/self';
 import { CoreEnrol, CoreEnrolEnrolmentInfo, CoreEnrolEnrolmentMethod } from '@features/enrol/services/enrol';
-
-const ROOT_CACHE_KEY = 'mmCourses:';
+import { CoreSiteWSPreSets, WSObservable } from '@classes/sites/authenticated-site';
 
 declare module '@singletons/events' {
 
@@ -49,6 +48,8 @@ declare module '@singletons/events' {
 @Injectable({ providedIn: 'root' })
 export class CoreCoursesProvider {
 
+    protected static readonly ROOT_CACHE_KEY = 'mmCourses:';
+
     static readonly SEARCH_PER_PAGE = 20;
     static readonly RECENT_PER_PAGE = 10;
     static readonly ENROL_INVALID_KEY = 'CoreCoursesEnrolInvalidKey';
@@ -69,16 +70,6 @@ export class CoreCoursesProvider {
 
     protected userCoursesIds?: Set<number>;
     protected downloadOptionsEnabled = false;
-
-    /**
-     * Whether current site supports getting course options.
-     *
-     * @returns Whether current site supports getting course options.
-     * @deprecated since 4.0.
-     */
-    canGetAdminAndNavOptions(): boolean {
-        return true;
-    }
 
     /**
      * Get categories. They can be filtered by id.
@@ -123,7 +114,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getCategoriesCacheKey(categoryId: number, addSubcategories?: boolean): string {
-        return ROOT_CACHE_KEY + 'categories:' + categoryId + ':' + !!addSubcategories;
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}categories:${categoryId}:${!!addSubcategories}`;
     }
 
     /**
@@ -140,16 +131,16 @@ export class CoreCoursesProvider {
         if (courseIds.length == 1) {
             // Only 1 course, check if it belongs to the user courses. If so, use all user courses.
             return this.getCourseIdsIfEnrolled(courseIds[0], siteId);
-        } else {
-            if (courseIds.length > 1 && courseIds.indexOf(siteHomeId) == -1) {
-                courseIds.push(siteHomeId);
-            }
-
-            // Sort the course IDs.
-            courseIds.sort((a, b) => b - a);
-
-            return courseIds;
         }
+
+        if (courseIds.length > 1 && courseIds.indexOf(siteHomeId) == -1) {
+            courseIds.push(siteHomeId);
+        }
+
+        // Sort the course IDs.
+        courseIds.sort((a, b) => b - a);
+
+        return courseIds;
     }
 
     /**
@@ -372,7 +363,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getCoursesCacheKey(ids: number[]): string {
-        return ROOT_CACHE_KEY + 'course:' + JSON.stringify(ids);
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}course:${JSON.stringify(ids)}`;
     }
 
     /**
@@ -545,7 +536,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getCoursesByFieldCacheKey(field: string = '', value: string | number = ''): string {
-        return ROOT_CACHE_KEY + 'coursesbyfield:' + field + ':' + value;
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}coursesbyfield:${field}:${value}`;
     }
 
     /**
@@ -603,26 +594,6 @@ export class CoreCoursesProvider {
     }
 
     /**
-     * Check if get courses by field WS is available in a certain site.
-     *
-     * @returns Whether get courses by field is available.
-     * @deprecated since 4.0.
-     */
-    isGetCoursesByFieldAvailable(): boolean {
-        return true;
-    }
-
-    /**
-     * Check if get courses by field WS is available in a certain site, by site ID.
-     *
-     * @returns Promise resolved with boolean: whether get courses by field is available.
-     * @deprecated since 4.0.
-     */
-    async isGetCoursesByFieldAvailableInSite(): Promise<boolean> {
-        return true;
-    }
-
-    /**
      * Get the navigation and administration options for the given courses.
      *
      * @param courseIds IDs of courses to get.
@@ -665,7 +636,10 @@ export class CoreCoursesProvider {
                 ignoreErrors(this.getUserNavigationOptionsObservable(courseIds, options), {}),
                 ignoreErrors(this.getUserAdministrationOptionsObservable(courseIds, options), {}),
             ).pipe(
-                map(([navOptions, admOptions]) => ({ navOptions, admOptions })),
+                map(([navOptions, admOptions]) => ({
+                    navOptions: navOptions as CoreCourseUserAdminOrNavOptionCourseIndexed,
+                    admOptions: admOptions as CoreCourseUserAdminOrNavOptionCourseIndexed,
+                })),
             );
         });
     }
@@ -677,7 +651,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getRecentCoursesCacheKey(userId: number): string {
-        return `${ROOT_CACHE_KEY}:recentcourses:${userId}`;
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}:recentcourses:${userId}`;
     }
 
     /**
@@ -710,7 +684,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getUserAdministrationOptionsCommonCacheKey(): string {
-        return ROOT_CACHE_KEY + 'administrationOptions:';
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}administrationOptions:`;
     }
 
     /**
@@ -727,11 +701,14 @@ export class CoreCoursesProvider {
      * Get user administration options for a set of courses.
      *
      * @param courseIds IDs of courses to get.
-     * @param siteId Site ID. If not defined, current site.
+     * @param options Options.
      * @returns Promise resolved with administration options for each course.
      */
-    getUserAdministrationOptions(courseIds: number[], siteId?: string): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
-        return firstValueFrom(this.getUserAdministrationOptionsObservable(courseIds, { siteId }));
+    getUserAdministrationOptions(
+        courseIds: number[],
+        options?: CoreSitesCommonWSOptions,
+    ): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
+        return firstValueFrom(this.getUserAdministrationOptionsObservable(courseIds, options));
     }
 
     /**
@@ -778,7 +755,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getUserNavigationOptionsCommonCacheKey(): string {
-        return ROOT_CACHE_KEY + 'navigationOptions:';
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}navigationOptions:`;
     }
 
     /**
@@ -794,11 +771,14 @@ export class CoreCoursesProvider {
      * Get user navigation options for a set of courses.
      *
      * @param courseIds IDs of courses to get.
-     * @param siteId Site ID. If not defined, current site.
+     * @param options Options.
      * @returns Promise resolved with navigation options for each course.
      */
-    async getUserNavigationOptions(courseIds: number[], siteId?: string): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
-        return firstValueFrom(this.getUserNavigationOptionsObservable(courseIds, { siteId }));
+    getUserNavigationOptions(
+        courseIds: number[],
+        options?: CoreSitesCommonWSOptions,
+    ): Promise<CoreCourseUserAdminOrNavOptionCourseIndexed> {
+        return firstValueFrom(this.getUserNavigationOptionsObservable(courseIds, options));
     }
 
     /**
@@ -1007,7 +987,7 @@ export class CoreCoursesProvider {
      * @returns Cache key.
      */
     protected getUserCoursesCacheKey(): string {
-        return ROOT_CACHE_KEY + 'usercourses';
+        return `${CoreCoursesProvider.ROOT_CACHE_KEY}usercourses`;
     }
 
     /**
@@ -1428,7 +1408,7 @@ export type CoreCourseSearchedData = CoreCourseBasicSearchedData & {
     enablecompletion?: number; // Completion enabled? 1: yes 0: no.
     completionnotify?: number; // 1: yes 0: no.
     lang?: string; // Forced course language.
-    theme?: string; // Fame of the forced theme.
+    theme?: string; // Name of the forced theme.
     marker?: number; // Current course marker.
     legacyfiles?: number; // If legacy files are enabled.
     calendartype?: string; // Calendar type.
@@ -1442,6 +1422,8 @@ export type CoreCourseSearchedData = CoreCourseBasicSearchedData & {
         inheritedstate: number; // 1 or 0 to use when localstate is set to inherit.
     }[];
     courseformatoptions?: CoreCourseFormatOption[]; // Additional options for particular course format.
+    communicationroomname?: string; // @since Moodle 4.4. Communication tool room name.
+    communicationroomurl?: string; // @since Moodle 4.4. Communication tool room URL.
 };
 
 /**
@@ -1462,7 +1444,7 @@ export type CoreCourseGetCoursesData = CoreEnrolledCourseBasicData & {
     /**
      * Number of weeks/topics.
      *
-     * @deprecated use courseformatoptions. This attribute is deprecated in moodle since 2.4 but still present.
+     * @deprecatedonmoodle since 2.4. Use courseformatoptions. This attribute is deprecated in moodle since 2.4 but still present.
      */
     numsections?: number;
     maxbytes?: number; // Largest size of file that can be uploaded into the course.
@@ -1470,7 +1452,7 @@ export type CoreCourseGetCoursesData = CoreEnrolledCourseBasicData & {
     /**
      * How the hidden sections in the course are displayed to students.
      *
-     * @deprecated use courseformatoptions. This attribute is deprecated in moodle since 2.4 but still present.
+     * @deprecatedonmoodle since 2.4. Use courseformatoptions. This attribute is deprecated in moodle since 2.4 but still present.
      */
     hiddensections?: number;
     groupmode?: number; // No group, separate, visible.

@@ -16,16 +16,18 @@ import { Injectable } from '@angular/core';
 
 import { CoreConstants } from '@/core/constants';
 import { LangChangeEvent } from '@ngx-translate/core';
-import { CoreAppProvider } from '@services/app';
 import { CoreConfig } from '@services/config';
 import { CoreSubscriptions } from '@singletons/subscriptions';
 import { makeSingleton, Translate, Http } from '@singletons';
 
 import moment from 'moment-timezone';
-import { CoreSite } from '../classes/site';
+import { CoreSite } from '../classes/sites/site';
 import { CorePlatform } from '@services/platform';
 import { AddonFilterMultilangHandler } from '@addons/filter/multilang/services/handlers/multilang';
 import { AddonFilterMultilang2Handler } from '@addons/filter/multilang2/services/handlers/multilang2';
+import { firstValueFrom } from 'rxjs';
+import { CoreLogger } from '@singletons/logger';
+import { CoreSites } from './sites';
 
 /*
  * Service to handle language features, like changing the current language.
@@ -39,6 +41,11 @@ export class CoreLangProvider {
     protected customStrings: CoreLanguageObject = {}; // Strings defined using the admin tool.
     protected customStringsRaw?: string;
     protected sitePluginsStrings: CoreLanguageObject = {}; // Strings defined by site plugins.
+    protected logger: CoreLogger;
+
+    constructor() {
+        this.logger = CoreLogger.getInstance('CoreLang');
+    }
 
     async initialize(): Promise<void> {
         // Set fallback language and language to use until the app determines the right language to use.
@@ -64,7 +71,7 @@ export class CoreLangProvider {
 
         let language: string;
 
-        if (CoreAppProvider.isAutomated()) {
+        if (CorePlatform.isAutomated()) {
             // Force current language to English when Behat is running.
             language = 'en';
         } else {
@@ -170,13 +177,21 @@ export class CoreLangProvider {
         // Use british english when parent english is loaded.
         moment.locale(language == 'en' ? 'en-gb' : language);
 
+        const previousLanguage = this.currentLanguage ?? this.getDefaultLanguage();
+
         this.currentLanguage = language;
 
         try {
-            await Promise.all([
-                this.reloadLanguageStrings(),
-                CoreConfig.set('current_language', language),
-            ]);
+            await this.reloadLanguageStrings();
+            await CoreConfig.set('current_language', language);
+        } catch (error) {
+            if (language !== previousLanguage) {
+                this.logger.error(`Language ${language} not available, reverting to ${previousLanguage}`, error);
+
+                return this.changeCurrentLanguage(previousLanguage);
+            }
+
+            throw error;
         } finally {
             // Load the custom and site plugins strings for the language.
             if (this.loadLangStrings(this.customStrings, language) || this.loadLangStrings(this.sitePluginsStrings, language)) {
@@ -349,12 +364,15 @@ export class CoreLangProvider {
     getTranslationTable(lang: string): Promise<Record<string, unknown>> {
         // Create a promise to convert the observable into a promise.
         return new Promise((resolve, reject): void => {
-            const observer = Translate.getTranslation(lang).subscribe((table) => {
-                resolve(table);
-                observer.unsubscribe();
-            }, (err) => {
-                reject(err);
-                observer.unsubscribe();
+            const observer = Translate.getTranslation(lang).subscribe({
+                next: (table) => {
+                    resolve(table);
+                    observer.unsubscribe();
+                },
+                error: (err) => {
+                    reject(err);
+                    observer.unsubscribe();
+                },
             });
         });
     }
@@ -362,14 +380,22 @@ export class CoreLangProvider {
     /**
      * Loads custom strings obtained from site.
      *
-     * @param currentSite Current site object.
+     * @param currentSite Current site object. If not defined, use current site.
      */
-    loadCustomStringsFromSite(currentSite: CoreSite): void {
+    loadCustomStringsFromSite(currentSite?: CoreSite): void {
+        currentSite = currentSite ?? CoreSites.getCurrentSite();
+
+        if (!currentSite) {
+            return;
+        }
+
         const customStrings = currentSite.getStoredConfig('tool_mobile_customlangstrings');
 
-        if (customStrings !== undefined) {
-            this.loadCustomStrings(customStrings);
+        if (customStrings === undefined) {
+            return;
         }
+
+        this.loadCustomStrings(customStrings);
     }
 
     /**
@@ -378,7 +404,7 @@ export class CoreLangProvider {
      * @param strings Custom strings to load (tool_mobile_customlangstrings).
      */
     loadCustomStrings(strings: string): void {
-        if (strings == this.customStringsRaw) {
+        if (strings === this.customStringsRaw) {
             // Strings haven't changed, stop.
             return;
         }
@@ -401,9 +427,9 @@ export class CoreLangProvider {
                 return;
             }
 
-            const lang = values[2].replace(/_/g, '-'); // Use the app format instead of Moodle format.
+            const lang = this.formatLanguage(values[2], CoreLangFormat.App); // Use the app format instead of Moodle format.
 
-            if (lang == this.currentLanguage) {
+            if (lang === this.currentLanguage) {
                 currentLangChanged = true;
             }
 
@@ -411,12 +437,7 @@ export class CoreLangProvider {
                 this.customStrings[lang] = {};
             }
 
-            // Convert old keys format to new one.
-            const key = values[0].replace(/^mm\.core/, 'core').replace(/^mm\./, 'core.').replace(/^mma\./, 'addon.')
-                .replace(/^core\.sidemenu/, 'core.mainmenu').replace(/^addon\.grades/, 'core.grades')
-                .replace(/^addon\.participants/, 'core.user');
-
-            this.loadString(this.customStrings, lang, key, values[1]);
+            this.loadString(this.customStrings, lang, values[0], values[1]);
         });
 
         this.customStringsRaw = strings;
@@ -503,7 +524,7 @@ export class CoreLangProvider {
             responseType: 'json',
         });
 
-        return <Record<string, string>> await observable.toPromise();
+        return <Record<string, string>> await firstValueFrom(observable);
     }
 
     /**

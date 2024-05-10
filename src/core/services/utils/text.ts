@@ -27,6 +27,7 @@ import { CoreUrl } from '@singletons/url';
 import { AlertButton } from '@ionic/angular';
 import { CorePath } from '@singletons/path';
 import { CorePlatform } from '@services/platform';
+import { ContextLevel } from '@/core/constants';
 
 /**
  * Different type of errors the app can treat.
@@ -273,6 +274,21 @@ export class CoreTextUtilsProvider {
     }
 
     /**
+     * Process HTML string.
+     *
+     * @param text HTML string.
+     * @param process Method to process the HTML.
+     * @returns Processed HTML string.
+     */
+    processHTML(text: string, process: (element: HTMLElement) => unknown): string {
+        const element = this.convertToElement(text);
+
+        process(element);
+
+        return element.innerHTML;
+    }
+
+    /**
      * Clean HTML tags.
      *
      * @param text The text to be cleaned.
@@ -296,18 +312,6 @@ export class CoreTextUtilsProvider {
         text = this.replaceNewLines(text, options.singleLine ? ' ' : '<br>');
 
         return text;
-    }
-
-    /**
-     * Concatenate two paths, adding a slash between them if needed.
-     *
-     * @param leftPath Left path.
-     * @param rightPath Right path.
-     * @returns Concatenated path.
-     * @deprecated since 4.0. Use CorePath instead.
-     */
-    concatenatePaths(leftPath: string, rightPath: string): string {
-        return CorePath.concatenatePaths(leftPath, rightPath);
     }
 
     /**
@@ -994,7 +998,7 @@ export class CoreTextUtilsProvider {
      * @returns Number with leading zeros.
      */
     twoDigits(num: string | number): string {
-        if (num < 10) {
+        if (Number(num) < 10) {
             return '0' + num;
         } else {
             return '' + num; // Convert to string for coherence.
@@ -1060,7 +1064,7 @@ export type CoreTextUtilsViewTextOptions = {
     componentId?: string | number; // An ID to use in conjunction with the component.
     files?: CoreWSFile[]; // List of files to display along with the text.
     filter?: boolean; // Whether the text should be filtered.
-    contextLevel?: string; // The context level.
+    contextLevel?: ContextLevel; // The context level.
     instanceId?: number; // The instance ID related to the context.
     courseId?: number; // Course ID the text belongs to. It can be used to improve performance with filters.
     displayCopyButton?: boolean; // Whether to display a button to copy the text.
