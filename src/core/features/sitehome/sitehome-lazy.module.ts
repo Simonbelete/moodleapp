@@ -19,6 +19,7 @@ import { CoreSharedModule } from '@/core/shared.module';
 import { CoreBlockComponentsModule } from '@/core/features/block/components/components.module';
 import { CoreCourseComponentsModule } from '@features/course/components/components.module';
 import { CoreSiteHomeIndexPage } from '@features/sitehome/pages/index';
+import { CoreCoursesComponentsModule } from '@features/courses/components/components.module';
 
 const routes: Routes = [
     {
@@ -28,15 +29,16 @@ const routes: Routes = [
 ];
 
 @NgModule({
+    declarations: [
+        CoreSiteHomeIndexPage,
+    ],
+    exports: [RouterModule],
     imports: [
         RouterModule.forChild(routes),
         CoreSharedModule,
         CoreBlockComponentsModule,
         CoreCourseComponentsModule,
+        CoreCoursesComponentsModule,
     ],
-    declarations: [
-        CoreSiteHomeIndexPage,
-    ],
-    exports: [RouterModule],
 })
 export class CoreSiteHomeLazyModule {}

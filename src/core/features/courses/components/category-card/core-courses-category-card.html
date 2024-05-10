@@ -1,0 +1,14 @@
+<ion-card>
+    <ion-item button class="ion-text-wrap" (click)="openCategory(category.id)" [attr.aria-label]="category.name" [detail]="true">
+        <ion-icon name="fas-folder" slot="start" [attr.aria-label]="'core.category' | translate"></ion-icon>
+        <ion-label>
+            <p class="item-heading">
+                <core-format-text [text]="category.name" contextLevel="coursecat" [contextInstanceId]="category.id"></core-format-text>
+            </p>
+        </ion-label>
+        <ion-badge slot="end" *ngIf="!showOnlyEnrolled && category.coursecount > 0" color="light">
+            <span aria-hidden="true">{{ category.coursecount }}</span>
+            <span class="sr-only">{{ 'core.courses.therearecourses' | translate:{ $a: category.coursecount } }}</span>
+        </ion-badge>
+    </ion-item>
+</ion-card>
