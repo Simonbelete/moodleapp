@@ -78,28 +78,8 @@
 
 <ng-template #categoriesCard>
     <core-empty-box *ngIf="!categoriesLoaded" icon="fas-cubes" [message]="'core.course.nocontentavailable' | translate" />
-
     <ng-container *ngIf="categories.length > 0">
-        <ion-item-divider>
-            <ion-label>
-                <h2 class="big">{{ 'core.courses.availablecourses' | translate }}</h2>
-            </ion-label>
-        </ion-item-divider>
         <core-courses-category-card *ngFor="let category of categories" [category]="category" />
-        <!-- <ion-card *ngFor="let category of categories">
-            <ion-item button class="ion-text-wrap" (click)="openCategory(category.id)" [attr.aria-label]="category.name" [detail]="true">
-                <ion-icon name="fas-folder" slot="start" [attr.aria-label]="'core.category' | translate" />
-                <ion-label>
-                    <p class="item-heading">
-                        <core-format-text [text]="category.name" contextLevel="coursecat" [contextInstanceId]="category.id" />
-                    </p>
-                </ion-label>
-                <ion-badge slot="end" *ngIf="!showOnlyEnrolled && category.coursecount > 0" color="light">
-                    <span aria-hidden="true">{{ category.coursecount }}</span>
-                    <span class="sr-only">{{ 'core.courses.therearecourses' | translate:{ $a: category.coursecount } }}</span>
-                </ion-badge>
-            </ion-item>
-        </ion-card> -->
     </ng-container>
 </ng-template>
 

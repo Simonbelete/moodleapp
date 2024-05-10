@@ -298,8 +298,6 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
                 return a.depth > b.depth ? 1 : -1;
             });
 
-            console.log('AAAAAAA', categories);
-
             this.categories = CoreUtils.formatTree(categories, 'parent', 'id', this.categoryId);
 
             this.logView();
