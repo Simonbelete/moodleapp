@@ -47,8 +47,7 @@
                         <h2 *ngIf="showOnlyEnrolled" class="big">{{ 'core.courses.mycourses' | translate }}</h2>
                     </ion-label>
                 </ion-item-divider>
-                <core-courses-course-list-item *ngFor="let course of courses" [course]="course" [showDownload]="downloadEnabled"
-                    layout="card">
+                <core-courses-course-list-item *ngFor="let course of courses" [course]="course" [showDownload]="downloadEnabled">
                 </core-courses-course-list-item>
             </ng-container>
 

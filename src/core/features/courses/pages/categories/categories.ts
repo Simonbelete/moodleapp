@@ -23,6 +23,7 @@ import { CoreNavigator } from '@services/navigator';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { CoreTime } from '@singletons/time';
+import { CoreLang } from '@services/lang';
 
 /**
  * Page that displays a list of categories and the courses in the current category if any.
@@ -40,6 +41,7 @@ export class CoreCoursesCategoriesPage implements OnInit, OnDestroy {
     categoriesLoaded = false;
 
     showOnlyEnrolled = false;
+    showByLanguage = true;
 
     downloadEnabled = false;
     downloadCourseEnabled = false;
@@ -47,6 +49,7 @@ export class CoreCoursesCategoriesPage implements OnInit, OnDestroy {
 
     protected categoryCourses: CoreCourseListItem[] = [];
     protected currentSiteId: string;
+    protected currentLanguage?: string;
     protected categoryId = 0;
     protected myCoursesObserver: CoreEventObserver;
     protected siteUpdatedObserver: CoreEventObserver;
@@ -55,6 +58,8 @@ export class CoreCoursesCategoriesPage implements OnInit, OnDestroy {
     protected logView: () => void;
 
     constructor() {
+        this.asyncInit();
+
         this.title = Translate.instant('core.courses.categories');
         this.currentSiteId = CoreSites.getRequiredCurrentSite().getId();
 
@@ -91,6 +96,13 @@ export class CoreCoursesCategoriesPage implements OnInit, OnDestroy {
                 url: '/course/index.php' + (this.categoryId > 0 ? `?categoryid=${this.categoryId}` : ''),
             });
         });
+    }
+
+    /*
+     * Async part of the constructor.
+     */
+    protected async asyncInit(): Promise<void> {
+	    this.currentLanguage = await CoreLang.getCurrentLanguage();
     }
 
     /**
@@ -147,6 +159,7 @@ export class CoreCoursesCategoriesPage implements OnInit, OnDestroy {
                 try {
                     this.categoryCourses = await CoreCourses.getCoursesByField('category', this.categoryId);
                     await this.filterEnrolled();
+                    await this.filterByLanguage();
                 } catch (error) {
                     !this.isDestroyed && CoreDomUtils.showErrorModalDefault(error, 'core.courses.errorloadcourses', true);
                 }
@@ -213,6 +226,17 @@ export class CoreCoursesCategoriesPage implements OnInit, OnDestroy {
                 }
             }));
             this.courses = this.categoryCourses.filter((course) => 'progress' in course);
+        }
+    }
+
+    /**
+     * Filter courses by current selected lanauge
+     */
+    async filterByLanguage(): Promise<void> {
+        if (!this.showByLanguage) {
+            this.courses = this.categoryCourses;
+        } else {
+            this.courses = this.categoryCourses.filter((course) => course.lang ? course.lang == this.currentLanguage : true);
         }
     }
 

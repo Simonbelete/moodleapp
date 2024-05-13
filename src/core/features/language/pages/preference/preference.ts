@@ -37,99 +37,99 @@ export class CoreLanguagePreferencePage {
 	    this.asyncInit();
 	}
 
-    /**
+	/*
      * Async part of the constructor.
      */
-    protected async asyncInit(): Promise<void> {
+	protected async asyncInit(): Promise<void> {
 
-        // Get the supported languages.
-        const languages = CoreConstants.CONFIG.languages;
-        for (const code in languages) {
-            this.languages.push({
-                code: code,
-                name: languages[code],
-            });
-        }
-        // Sort them by name.
-        this.languages.sort((a, b) => a.name.localeCompare(b.name));
-        this.selectedLanguage = await CoreLang.getCurrentLanguage();
-    }
+	    // Get the supported languages.
+	    const languages = CoreConstants.CONFIG.languages;
+	    for (const code in languages) {
+	        this.languages.push({
+	            code: code,
+	            name: languages[code],
+	        });
+	    }
+	    // Sort them by name.
+	    this.languages.sort((a, b) => a.name.localeCompare(b.name));
+	    this.selectedLanguage = await CoreLang.getCurrentLanguage();
+	}
 
-    /**
-     * Called when a new language is selected.
-     *
-     * @param ev Event
-     */
-    async languageChanged(ev: Event): Promise<void> {
-      ev.stopPropagation();
-      ev.preventDefault();
+	/**
+	 * Called when a new language is selected.
+	 *
+	 * @param ev Event
+	 */
+	async languageChanged(ev: Event): Promise<void> {
+	    ev.stopPropagation();
+	    ev.preventDefault();
 
-      const previousLanguage = await CoreLang.getCurrentLanguage();
-      if (this.selectedLanguage === previousLanguage) {
-          // Prevent opening again.
+	    const previousLanguage = await CoreLang.getCurrentLanguage();
+	    if (this.selectedLanguage === previousLanguage) {
+	        // Prevent opening again.
 
-          return;
-      }
+	        return;
+	    }
 
-      const previousLanguageCancel = Translate.instant('core.cancel');
+	    const previousLanguageCancel = Translate.instant('core.cancel');
 
-      try {
-          await CoreLang.changeCurrentLanguage(this.selectedLanguage);
-      } finally {
-          const langName = this.languages.find((lang) => lang.code == this.selectedLanguage)?.name;
+	    try {
+	        await CoreLang.changeCurrentLanguage(this.selectedLanguage);
+	    } finally {
+	        const langName = this.languages.find((lang) => lang.code == this.selectedLanguage)?.name;
 
-          const buttons: AlertButton[] = [
-              {
-                text: previousLanguageCancel,
-                role: 'cancel',
-                handler: (): void => {
-                    clearTimeout(timeout);
-                    this.selectedLanguage = previousLanguage;
-                    CoreLang.changeCurrentLanguage(this.selectedLanguage);
-                },
-              },
-              {
-                  text: Translate.instant('core.settings.changelanguage', { $a: langName }),
-                  cssClass: 'timed-button',
-                  handler: (): void => {
-                      clearTimeout(timeout);
-                      this.applyLanguageAndRestart();
-                  },
-              },
-          ];
+	        const buttons: AlertButton[] = [
+	            {
+	                text: previousLanguageCancel,
+	                role: 'cancel',
+	                handler: (): void => {
+	                    clearTimeout(timeout);
+	                    this.selectedLanguage = previousLanguage;
+	                    CoreLang.changeCurrentLanguage(this.selectedLanguage);
+	                },
+	            },
+	            {
+	                text: Translate.instant('core.settings.changelanguage', { $a: langName }),
+	                cssClass: 'timed-button',
+	                handler: (): void => {
+	                    clearTimeout(timeout);
+	                    this.applyLanguageAndRestart();
+	                },
+	            },
+	        ];
 
-          const alert = await CoreDomUtils.showAlertWithOptions(
-              {
-                  message: Translate.instant('core.settings.changelanguagealert'),
-                  buttons,
-              },
-          );
-          const timeout = window.setTimeout(async () => {
-              await alert.dismiss();
-              this.applyLanguageAndRestart();
-          }, 10000);
-		}
+	        const alert = await CoreDomUtils.showAlertWithOptions(
+	            {
+	                message: Translate.instant('core.settings.changelanguagealert'),
+	                buttons,
+	            },
+	        );
+	        const timeout = window.setTimeout(async () => {
+	            await alert.dismiss();
+	            this.applyLanguageAndRestart();
+	        }, 10000);
+	    }
 	}
 
 	/**
 	 * Apply language changes and restart the app.
 	 */
-    protected async applyLanguageAndRestart(): Promise<void> {
-        // Invalidate cache for all sites to get the content in the right language.
-        const sites = await CoreSites.getSitesInstances();
-        await CoreUtils.ignoreErrors(Promise.all(sites.map((site) => site.invalidateWsCache())));
+	protected async applyLanguageAndRestart(): Promise<void> {
+	    // Invalidate cache for all sites to get the content in the right language.
+	    const sites = await CoreSites.getSitesInstances();
+	    await CoreUtils.ignoreErrors(Promise.all(sites.map((site) => site.invalidateWsCache())));
 
-        CoreEvents.trigger(CoreEvents.LANGUAGE_CHANGED, this.selectedLanguage);
+	    CoreEvents.trigger(CoreEvents.LANGUAGE_CHANGED, this.selectedLanguage);
 
-        CoreNavigator.navigate('/login', {
-            reset: true,
-        });
-    }
+	    CoreNavigator.navigate('/login', {
+	        reset: true,
+	    });
+	}
 
-    async getStartedClick(): Promise<void> {
-        CoreNavigator.navigate('/login', {
-            reset: true,
-        });
-    }
+	async getStartedClick(): Promise<void> {
+	    CoreNavigator.navigate('/login', {
+	        reset: true,
+	    });
+	}
 
 }
