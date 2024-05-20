@@ -111,6 +111,19 @@ export class TestingBehatRuntimeService {
     }
 
     /**
+     * Get coverage data.
+     *
+     * @returns Coverage data.
+     */
+    getCoverage(): string | null {
+        if (!('__coverage__' in window)) {
+            return null;
+        }
+
+        return JSON.stringify(window.__coverage__);
+    }
+
+    /**
      * Check whether the service has been initialized or not.
      *
      * @returns Whether the service has been initialized or not.
@@ -496,16 +509,16 @@ export class TestingBehatRuntimeService {
     getHeader(): string {
         this.log('Action - Get header');
 
-        let titles = Array.from(document.querySelectorAll<HTMLElement>('.ion-page:not(.ion-page-hidden) > ion-header h1'))
+        const getBySelector = (selector: string ) =>  Array.from(document.querySelectorAll<HTMLElement>(selector))
             .filter((title) => TestingBehatDomUtils.isElementVisible(title, document.body))
-            .map((title) => title.innerText.trim());
+            .map((title) => title.innerText.trim())
+            .filter((title) => title.length > 0);
+
+        let titles = getBySelector('.ion-page:not(.ion-page-hidden) > ion-header h1');
 
         // Collapsed title, get the floating title.
-        if (titles.length < 0 || (titles.length === 1 && titles[0] === '')) {
-            titles = Array.from(document.querySelectorAll<HTMLElement>(
-                '.ion-page:not(.ion-page-hidden) h1.collapsible-header-floating-title',
-                )).filter((title) => TestingBehatDomUtils.isElementVisible(title, document.body))
-                .map((title) => title.innerText.trim());
+        if (titles.length === 0) {
+            titles = getBySelector('.ion-page:not(.ion-page-hidden) h1.collapsible-header-floating-title');
         }
 
         if (titles.length > 1) {

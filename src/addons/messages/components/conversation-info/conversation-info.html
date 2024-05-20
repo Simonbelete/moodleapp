@@ -4,7 +4,7 @@
             <h1>{{ 'addon.messages.groupinfo' | translate }}</h1>
         </ion-title>
         <ion-buttons slot="end">
-            <ion-button fill="clear" (click)="closeModal()" [attr.aria-label]="'core.close' | translate">
+            <ion-button fill="clear" (click)="closeModal()" [ariaLabel]="'core.close' | translate">
                 <ion-icon name="fas-xmark" slot="icon-only" aria-hidden="true" />
             </ion-button>
         </ion-buttons>
@@ -19,7 +19,7 @@
         <ion-item class="ion-text-center" *ngIf="conversation">
             <ion-label>
                 <div class="large-avatar">
-                    <img class="avatar" [src]="conversation.imageurl" core-external-content [alt]="conversation.name"
+                    <img class="avatar" [url]="conversation.imageurl" core-external-content [alt]="conversation.name"
                         onError="this.src='assets/img/group-avatar.svg'">
                 </div>
                 <h2>

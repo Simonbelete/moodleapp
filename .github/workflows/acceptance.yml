@@ -20,7 +20,6 @@ concurrency:
     group: acceptance-${{ github.ref }}
     cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
-
 jobs:
 
   build:
@@ -63,59 +62,10 @@ jobs:
 
       - name: Prepare Behat tags
         id: set-tags
+        working-directory: app
         run: |
           if [ -z $BEHAT_TAGS ]; then
-            tags=(
-              "@addon_block_timeline"
-              "@addon_calendar"
-              "@addon_competency"
-              "@addon_coursecompletion"
-              "@addon_messages"
-              "@addon_mod_assign"
-              "@addon_mod_bigbluebuttonbn"
-              "@addon_mod_book"
-              "@addon_mod_chat"
-              "@addon_mod_choice"
-              "@addon_mod_data"
-              "@addon_mod_feedback"
-              "@addon_mod_folder"
-              "@addon_mod_forum"
-              "@addon_mod_glossary"
-              "@addon_mod_imscp"
-              "@addon_mod_lesson"
-              "@addon_mod_page"
-              "@addon_mod_quiz"
-              "@addon_mod_scorm"
-              "@addon_mod_survey"
-              "@addon_mod_url"
-              "@addon_mod_workshop"
-              "@addon_notifications"
-              "@addon_blog"
-              "@core"
-              "@core_comments"
-              "@core_course"
-              "@core_courses"
-              "@core_dataprivacy"
-              "@core_grades"
-              "@core_login"
-              "@core_mainmenu"
-              "@core_policy"
-              "@core_reminders"
-              "@core_reportbuilder"
-              "@core_search"
-              "@core_settings"
-              "@core_siteplugins"
-              "@core_tag"
-              "@core_user"
-              "@core_usertour"
-            )
-
-            tags_json="["
-            for tag in "${tags[@]}"; do
-              tags_json+="\"$tag\","
-            done
-            tags_json="${tags_json%?}"
-            tags_json+="]"
+            tags_json=`.github/scripts/print_behat_tags_json.sh`
             echo "tags=$tags_json" >> $GITHUB_OUTPUT;
           else
             echo "tags=[\"$BEHAT_TAGS\"]" >> $GITHUB_OUTPUT;

@@ -38,10 +38,10 @@
 
         .specificfeedback, .rightanswer, .im-feedback, .feedback, .generalfeedback {
             margin: 0 0 .5em;
-        }
 
-        p {
-            --color: var(--core-question-feedback-color);
+            p {
+                --color: var(--core-question-feedback-color);
+            }
         }
 
         .correctness {
@@ -105,11 +105,5 @@
     .questioncorrectnessicon,
     .fa.icon.questioncorrectnessicon {
         font-size: var(--mdl-typography-icon-fontSize-md);
-    }
-
-    .item.item-interactive.item-interactive-disabled ::ng-deep {
-        ion-label, ion-select, ion-checkbox {
-            opacity: 0.7;
-        }
     }
 }
