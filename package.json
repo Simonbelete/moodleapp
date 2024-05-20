@@ -18,7 +18,7 @@
     }
   ],
   "scripts": {
-    "local": "ionic cordova resources android -i -s",
+    "local": "ionic cordova resources android -s",
     "ng": "ng",
     "start": "ionic serve --browser=$MOODLE_APP_BROWSER --verbose --ssl",
     "serve:test": "NODE_ENV=testing ionic serve --no-open",
