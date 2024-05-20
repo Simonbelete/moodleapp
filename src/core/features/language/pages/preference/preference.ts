@@ -55,60 +55,18 @@ export class CoreLanguagePreferencePage {
 	    this.selectedLanguage = await CoreLang.getCurrentLanguage();
 	}
 
-	/**
-	 * Called when a new language is selected.
-	 *
-	 * @param ev Event
-	 */
-	async languageChanged(ev: Event): Promise<void> {
-	    ev.stopPropagation();
-	    ev.preventDefault();
+	 /**
+     * Called when a new language is selected.
+     *
+     * @param languageCode string
+     */
+	 async languageChanged(languageCode: string): Promise<void> {
+		this.selectedLanguage = languageCode;
 
-	    const previousLanguage = await CoreLang.getCurrentLanguage();
-	    if (this.selectedLanguage === previousLanguage) {
-	        // Prevent opening again.
+		await CoreLang.changeCurrentLanguage(this.selectedLanguage);
 
-	        return;
-	    }
+		this.applyLanguageAndRestart();
 
-	    const previousLanguageCancel = Translate.instant('core.cancel');
-
-	    try {
-	        await CoreLang.changeCurrentLanguage(this.selectedLanguage);
-	    } finally {
-	        const langName = this.languages.find((lang) => lang.code == this.selectedLanguage)?.name;
-
-	        const buttons: AlertButton[] = [
-	            {
-	                text: previousLanguageCancel,
-	                role: 'cancel',
-	                handler: (): void => {
-	                    clearTimeout(timeout);
-	                    this.selectedLanguage = previousLanguage;
-	                    CoreLang.changeCurrentLanguage(this.selectedLanguage);
-	                },
-	            },
-	            {
-	                text: Translate.instant('core.settings.changelanguage', { $a: langName }),
-	                cssClass: 'timed-button',
-	                handler: (): void => {
-	                    clearTimeout(timeout);
-	                    this.applyLanguageAndRestart();
-	                },
-	            },
-	        ];
-
-	        const alert = await CoreDomUtils.showAlertWithOptions(
-	            {
-	                message: Translate.instant('core.settings.changelanguagealert'),
-	                buttons,
-	            },
-	        );
-	        const timeout = window.setTimeout(async () => {
-	            await alert.dismiss();
-	            this.applyLanguageAndRestart();
-	        }, 10000);
-	    }
 	}
 
 	/**

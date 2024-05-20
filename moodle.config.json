@@ -32,15 +32,17 @@
             "imageurl": "https://tpgs.ilri.org/_next/image?url=%2Fimages%2Filri_logo.png&w=1920&q=100"
         }
     ],
+    "hideInformativeLinks": true,
+    "removeaccountonlogout": true,
     "multisitesdisplay": "",
     "sitefindersettings": {},
     "onlyallowlistedsites": true,
     "forcedefaultlanguage": false,
     "privacypolicy": "https://moodle.net/moodle-app-privacy/",
-    "notificoncolor": "#993832",
+    "notificoncolor": "#1560BD",
     "enableanalytics": false,
     "enableonboarding": true,
-    "forceColorScheme": "",
+    "forceColorScheme": "light",
     "forceLoginLogo": false,
     "ioswebviewscheme": "moodleappfs",
     "appstores": {
