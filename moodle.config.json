@@ -32,6 +32,8 @@
             "imageurl": "https://tpgs.ilri.org/_next/image?url=%2Fimages%2Filri_logo.png&w=1920&q=100"
         }
     ],
+    "hideInformativeLinks": true,
+    "removeaccountonlogout": true,
     "multisitesdisplay": "",
     "sitefindersettings": {},
     "onlyallowlistedsites": true,
@@ -40,7 +42,7 @@
     "notificoncolor": "#993832",
     "enableanalytics": false,
     "enableonboarding": true,
-    "forceColorScheme": "",
+    "forceColorScheme": "light",
     "forceLoginLogo": false,
     "ioswebviewscheme": "moodleappfs",
     "appstores": {

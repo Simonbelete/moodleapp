@@ -14,14 +14,13 @@
 
 import { Component } from '@angular/core';
 import { CoreLang } from '@services/lang';
-import { Translate } from '@singletons';
-import { AlertButton } from '@ionic/angular';
-import { CoreDomUtils } from '@services/utils/dom';
-import { CoreSites } from '@services/sites';
+import { CoreSiteCheckResponse, CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEvents } from '@singletons/events';
 import { CoreNavigator } from '@services/navigator';
 import { CoreConstants } from '@/core/constants';
+import { CoreSitePublicConfigResponse, CoreUnauthenticatedSite } from '@classes/sites/unauthenticated-site';
+import { CoreSitesFactory } from '@services/sites-factory';
 
 @Component({
     selector: 'page-core-app-language-preference.ts',
@@ -30,11 +29,17 @@ import { CoreConstants } from '@/core/constants';
 })
 export class CoreLanguagePreferencePage {
 
+    site!: CoreUnauthenticatedSite;
+    siteName?: string;
+    siteCheckError = '';
+    siteConfig?: CoreSitePublicConfigResponse;
 	languages: { code: string; name: string }[] = [];
 	selectedLanguage = '';
 
+    protected siteCheck?: CoreSiteCheckResponse;
+
 	constructor() {
-	    this.asyncInit();
+        this.asyncInit();
 	}
 
     /**
@@ -53,62 +58,30 @@ export class CoreLanguagePreferencePage {
         // Sort them by name.
         this.languages.sort((a, b) => a.name.localeCompare(b.name));
         this.selectedLanguage = await CoreLang.getCurrentLanguage();
+
+        // Load Site Detail
+        this.siteCheck = CoreNavigator.getRouteParam<CoreSiteCheckResponse>('siteCheck');
+
+        const siteUrl = this.siteCheck?.siteUrl || CoreNavigator.getRequiredRouteParam<string>('siteUrl');
+        if (this.siteCheck?.config) {
+            this.siteConfig = this.siteCheck.config;
+        }
+
+        this.site = CoreSitesFactory.makeUnauthenticatedSite(siteUrl, this.siteConfig);
+        this.siteName = await this.site.getSiteName();
     }
 
     /**
      * Called when a new language is selected.
      *
-     * @param ev Event
+     * @param languageCode string
      */
-    async languageChanged(ev: Event): Promise<void> {
-      ev.stopPropagation();
-      ev.preventDefault();
+    async languageChanged(languageCode: string): Promise<void> {
+        this.selectedLanguage = languageCode;
 
-      const previousLanguage = await CoreLang.getCurrentLanguage();
-      if (this.selectedLanguage === previousLanguage) {
-          // Prevent opening again.
+        await CoreLang.changeCurrentLanguage(this.selectedLanguage);
 
-          return;
-      }
-
-      const previousLanguageCancel = Translate.instant('core.cancel');
-
-      try {
-          await CoreLang.changeCurrentLanguage(this.selectedLanguage);
-      } finally {
-          const langName = this.languages.find((lang) => lang.code == this.selectedLanguage)?.name;
-
-          const buttons: AlertButton[] = [
-              {
-                text: previousLanguageCancel,
-                role: 'cancel',
-                handler: (): void => {
-                    clearTimeout(timeout);
-                    this.selectedLanguage = previousLanguage;
-                    CoreLang.changeCurrentLanguage(this.selectedLanguage);
-                },
-              },
-              {
-                  text: Translate.instant('core.settings.changelanguage', { $a: langName }),
-                  cssClass: 'timed-button',
-                  handler: (): void => {
-                      clearTimeout(timeout);
-                      this.applyLanguageAndRestart();
-                  },
-              },
-          ];
-
-          const alert = await CoreDomUtils.showAlertWithOptions(
-              {
-                  message: Translate.instant('core.settings.changelanguagealert'),
-                  buttons,
-              },
-          );
-          const timeout = window.setTimeout(async () => {
-              await alert.dismiss();
-              this.applyLanguageAndRestart();
-          }, 10000);
-		}
+        this.applyLanguageAndRestart();
 	}
 
 	/**
