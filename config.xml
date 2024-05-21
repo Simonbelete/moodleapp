@@ -37,7 +37,7 @@
     <preference name="LoadUrlTimeoutValue" value="60000" />
     <preference name="load-url-timeout" value="60000" />
     <preference name="AutoHideSplashScreen" value="false" />
-    <preference name="SplashScreenBackgroundColor" value="#993832" />
+    <preference name="SplashScreenBackgroundColor" value="#1560BD" />
     <preference name="android-minSdkVersion" value="22" />
     <preference name="android-targetSdkVersion" value="33" />
     <preference name="AndroidPersistentFileLocation" value="Compatibility" />
@@ -59,8 +59,8 @@
     </feature>
     <platform name="android">
         <preference name="AndroidWindowSplashScreenAnimatedIcon" value="resources/android/android-splash.xml" />
-        <preference name="AndroidWindowSplashScreenBackground" value="#993832" />
-        <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#993832" />
+        <preference name="AndroidWindowSplashScreenBackground" value="#1560BD" />
+        <preference name="AndroidWindowSplashScreenIconBackgroundColor" value="#1560BD" />
         <resource-file src="MainActivity.java" target="app/src/main/java/com/moodle/moodlemobile/MainActivity.java" />
         <resource-file src="google-services.json" target="app/google-services.json" />
         <resource-file src="resources/android/icon/drawable-ldpi-icon.png" target="app/src/main/res/mipmap-ldpi/smallicon.png" />

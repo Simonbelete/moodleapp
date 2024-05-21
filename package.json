@@ -18,7 +18,7 @@
     }
   ],
   "scripts": {
-    "local": "ionic cordova resources android -s",
+    "local": "ionic cordova resources android -i",
     "ng": "ng",
     "start": "ionic serve --browser=$MOODLE_APP_BROWSER --verbose --ssl",
     "serve:test": "NODE_ENV=testing ionic serve --no-open",
@@ -26,7 +26,7 @@
     "build:prod": "NODE_ENV=production ionic build --prod",
     "build:test": "NODE_ENV=testing ionic build --configuration=testing",
     "release:android": "npm run build:prod && cordova build android --prod --release -- --packageType=apk",
-    "dev:android": "concurrently \"npm run dev:android:app2\" \"npm run dev:android:cordova\"",
+    "dev:android": "concurrently \"npm run dev:android:app\" \"npm run dev:android:cordova\"",
     "dev:android:app": "ionic cordova run android --livereload --external --ssl --verbose",
     "dev:android:app2": "ionic cordova run android -l -c --external --verbose",
     "dev:android:cordova": "npm run dev --prefix cordova-plugin-moodleapp",
