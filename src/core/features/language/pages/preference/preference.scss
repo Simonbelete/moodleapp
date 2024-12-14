@@ -1,0 +1,19 @@
+ion-content {
+    --ion-background-color: var(--primary);
+
+    img {
+       width:90%; margin: auto;
+    }
+
+    .center {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        width: 100%;
+        height: 90%;
+    }
+
+    .languages-list {
+        margin-top: 50px;
+    }
+}

@@ -1,0 +1,17 @@
+<ion-content class="core-language-preference">
+    <div class="center">
+        <div style="flex-grow: 10;"></div>
+        <img src="assets/img/ilri_cgiar_white_logo.png" alt="">
+        <div style="flex-grow: 10;"></div>
+
+        <ion-grid class="languages-list">
+            <ion-row>
+                <ion-col *ngFor="let entry of languages" size="6" size-md="4" size-lg="2">
+                    <ion-button color="light" size="small" expand="block" (click)="languageChanged(entry.code)">
+                        {{ entry.name}}
+                    </ion-button>
+                </ion-col>
+            </ion-row>
+        </ion-grid>
+    </div>
+</ion-content>

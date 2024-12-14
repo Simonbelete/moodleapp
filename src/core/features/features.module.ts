@@ -47,7 +47,7 @@ import { CoreViewerModule } from './viewer/viewer.module';
 import { CoreXAPIModule } from './xapi/xapi.module';
 import { CoreReportBuilderModule } from './reportbuilder/reportbuilder.module';
 import { CorePolicyModule } from './policy/policy.module';
-
+import { CoreLanguagePreferenceModule } from './language/language.module';
 @NgModule({
     imports: [
         CoreBlockModule,
@@ -82,6 +82,7 @@ import { CorePolicyModule } from './policy/policy.module';
         CoreXAPIModule,
         CoreReportBuilderModule,
         CorePolicyModule,
+        CoreLanguagePreferenceModule,
 
         // Import last to allow overrides.
         CoreEmulatorModule,
