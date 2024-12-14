@@ -17,7 +17,7 @@ import { Component, ElementRef, Input, OnChanges, OnDestroy, OnInit } from '@ang
 import { CoreCourseProvider, CoreCourse } from '@features/course/services/course';
 import { CoreCourseHelper, CorePrefetchStatusInfo } from '@features/course/services/course-helper';
 import { CoreUser } from '@features/user/services/user';
-import { CoreNavigator } from '@services/navigator';
+// import { CoreNavigator } from '@services/navigator';
 import { CoreSites } from '@services/sites';
 import { CoreDomUtils } from '@services/utils/dom';
 import { Translate } from '@singletons';
@@ -169,14 +169,16 @@ export class CoreCoursesCourseListItemComponent implements OnInit, OnDestroy, On
      * Open a course.
      */
     openCourse(): void {
-        if (this.isEnrolled) {
-            CoreCourseHelper.openCourse(this.course, { params: { isGuest: false } });
-        } else {
-            CoreNavigator.navigateToSitePath(
-                `/course/${this.course.id}/summary`,
-                { params: { course: this.course } },
-            );
-        }
+        // Redirec to course
+        CoreCourseHelper.openCourse(this.course, { params: { isGuest: false } });
+        // if (this.isEnrolled) {
+        //     CoreCourseHelper.openCourse(this.course, { params: { isGuest: false } });
+        // } else {
+        //     CoreNavigator.navigateToSitePath(
+        //         `/course/${this.course.id}/summary`,
+        //         { params: { course: this.course } },
+        //     );
+        // }
     }
 
     /**
