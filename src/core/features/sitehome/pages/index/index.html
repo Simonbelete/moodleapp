@@ -54,18 +54,18 @@
             <ng-container *ngIf="items.length > 0">
                 <ng-container *ngFor="let item of items">
                     <ng-container [ngSwitch]="item">
-                        <ng-container *ngSwitchCase="'LIST_OF_COURSE'">
+                        <!-- <ng-container *ngSwitchCase="'LIST_OF_COURSE'">
                             <ng-template *ngTemplateOutlet="allCourseList" />
-                        </ng-container>
+                        </ng-container> -->
                         <ng-container *ngSwitchCase="'LIST_OF_CATEGORIES'">
-                            <ng-template *ngTemplateOutlet="categories" />
+                            <ng-template *ngTemplateOutlet="categoriesCard" />
                         </ng-container>
-                        <ng-container *ngSwitchCase="'COURSE_SEARCH_BOX'">
+                        <!-- <ng-container *ngSwitchCase="'COURSE_SEARCH_BOX'">
                             <ng-template *ngTemplateOutlet="courseSearch" />
                         </ng-container>
                         <ng-container *ngSwitchCase="'ENROLLED_COURSES'">
                             <ng-template *ngTemplateOutlet="enrolledCourseList" />
-                        </ng-container>
+                        </ng-container> -->
                         <ng-container *ngSwitchCase="'NEWS_ITEMS'">
                             <ng-template *ngTemplateOutlet="news" />
                         </ng-container>
@@ -94,7 +94,7 @@
     <core-course-module class="core-sitehome-news" *ngIf="newsForumModule" [module]="newsForumModule" />
 </ng-template>
 
-<ng-template #categories>
+<ng-template #categoriesTemplate>
     <ion-card>
         <ion-item button class="ion-text-wrap" (click)="openCourseCategories()">
             <ion-icon name="far-folder" slot="start" aria-hidden="true" />
@@ -103,6 +103,26 @@
             </ion-label>
         </ion-item>
     </ion-card>
+</ng-template>
+
+<ng-template #categoriesCard>
+    <core-empty-box *ngIf="!categoriesLoaded" icon="fas-cubes" [message]="'core.course.nocontentavailable' | translate" />
+    <ng-container *ngIf="categories.length > 0">
+        <ion-card *ngFor="let category of categories">
+            <ion-item button class="ion-text-wrap" (click)="openCategory(category.id)" [attr.aria-label]="category.name" [detail]="true">
+                <ion-icon name="far-folder" slot="start" [attr.aria-label]="'core.category' | translate" />
+                <ion-label>
+                    <p class="item-heading">
+                        <core-format-text [text]="category.name" contextLevel="coursecat" [contextInstanceId]="category.id" />
+                    </p>
+                </ion-label>
+                <ion-badge slot="end" *ngIf="!showOnlyEnrolled && category.coursecount > 0" color="light">
+                    <span aria-hidden="true">{{ category.coursecount }}</span>
+                    <span class="sr-only">{{ 'core.courses.therearecourses' | translate:{ $a: category.coursecount } }}</span>
+                </ion-badge>
+            </ion-item>
+        </ion-card>
+    </ng-container>
 </ng-template>
 
 <ng-template #enrolledCourseList>
