@@ -77,8 +77,15 @@
                 <!-- Description and restrictions -->
                 <div *ngIf="module.description || (showAvailability && module.availabilityinfo)" id="activity-{{module.id}}-collapsible"
                     class="ion-text-wrap activity-description-availabilityinfo activity-extra" [collapsible-item]="64">
-                    <core-format-text class="core-module-description" *ngIf="module.description" [text]="module.description"
-                        contextLevel="module" [contextInstanceId]="module.id" [courseId]="module.course" />
+                    <p>Hello </p>
+
+                    <core-format-text [text]="module.activity_image" contextLevel="course" />
+
+                    <img *ngIf="module.activity_image" [url]="module.activity_image" core-external-content alt="" />
+
+
+                    <!-- <core-format-text class="core-module-description" *ngIf="module.description" [text]="module.description"
+                        contextLevel="module" [contextInstanceId]="module.id" [courseId]="module.course" /> -->
 
                     <!-- Availability info -->
                     <div *ngIf="showAvailability && module.availabilityinfo" class="core-module-availabilityinfo colored-box-with-icon">

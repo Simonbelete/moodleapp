@@ -155,7 +155,8 @@ export class CoreCourseIndexPage implements OnInit, OnDestroy {
         this.loaded = true;
 
         await Promise.all([
-            this.loadCourseHandlers(),
+            // Disable Header in course
+            // this.loadCourseHandlers(),
             this.loadBasinInfo(),
         ]);
     }

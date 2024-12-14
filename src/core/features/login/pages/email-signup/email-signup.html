@@ -92,9 +92,9 @@
                     <!-- Username and password. -->
                     <ion-item class="ion-text-wrap">
                         <ion-input labelPlacement="stacked" type="text" name="username"
-                            placeholder="{{ 'core.login.username' | translate }}" formControlName="username" autocapitalize="none"
+                            placeholder="{{ 'core.login.phonenumber' | translate }}" formControlName="username" autocapitalize="none"
                             autocorrect="off">
-                            <div slot="label" [core-mark-required]="true">{{ 'core.login.username' | translate }}</div>
+                            <div slot="label" [core-mark-required]="true">{{ 'core.login.phonenumber' | translate }}</div>
                         </ion-input>
                         <core-input-errors [control]="signupForm.controls.username" [errorMessages]="usernameErrors" />
                     </ion-item>
@@ -111,14 +111,14 @@
                         <core-input-errors [control]="signupForm.controls.password" [errorMessages]="passwordErrors" />
                     </ion-item>
 
-                    <ion-item class="ion-text-wrap">
+                    <ion-item class="ion-text-wrap" hidden>
                         <ion-input labelPlacement="stacked" type="email" name="email" placeholder="{{ 'core.user.email' | translate }}"
                             formControlName="email" autocapitalize="none" autocorrect="off">
                             <div slot="label" [core-mark-required]="true">{{ 'core.user.email' | translate }}</div>
                         </ion-input>
                         <core-input-errors [control]="signupForm.controls.email" [errorMessages]="emailErrors" />
                     </ion-item>
-                    <ion-item class="ion-text-wrap">
+                    <ion-item class="ion-text-wrap" hidden>
                         <ion-input labelPlacement="stacked" type="email" name="email2"
                             placeholder="{{ 'core.user.emailagain' | translate }}" autocapitalize="none" formControlName="email2"
                             autocorrect="off" [pattern]="escapeMail(signupForm.controls.email.value)">

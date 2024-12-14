@@ -61,6 +61,7 @@
         @if (!isModule(modOrSubsection)) {
         <core-course-section [course]="course" [section]="modOrSubsection" [lastModuleViewed]="lastModuleViewed"
             [viewedModules]="viewedModules" [collapsible]="true" />
+
         } @else {
         <core-course-module *ngIf="modOrSubsection.visibleoncoursepage !== 0" [module]="modOrSubsection" [section]="section"
             [showActivityDates]="course.showactivitydates" [showCompletionConditions]="course.showcompletionconditions"

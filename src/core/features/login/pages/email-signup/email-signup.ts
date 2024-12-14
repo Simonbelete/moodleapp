@@ -285,6 +285,12 @@ export class CoreLoginEmailSignupPage implements OnInit {
         e.preventDefault();
         e.stopPropagation();
 
+        const uname = this.signupForm.controls['username'].value;
+        const generatedEmail = `${uname}@example.com`;
+
+        this.signupForm.controls['email'].setValue(generatedEmail);
+        this.signupForm.controls['email2'].setValue(generatedEmail);
+
         this.formSubmitClicked = true;
 
         if (!this.signupForm.valid || (this.settings?.recaptchapublickey && !this.captcha.recaptcharesponse)) {

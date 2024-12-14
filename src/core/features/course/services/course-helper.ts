@@ -2259,6 +2259,8 @@ export type CoreCourseModuleData = Omit<CoreCourseGetContentsWSModule, 'completi
     handlerData?: CoreCourseModuleHandlerData;
     completiondata?: CoreCourseModuleCompletionData;
     section: number;
+    // eslint-disable-next-line @typescript-eslint/naming-convention
+    activity_image?: string;
 };
 
 /**
