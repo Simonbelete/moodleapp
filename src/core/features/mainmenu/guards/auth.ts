@@ -26,7 +26,8 @@ import { Router } from '@singletons';
  */
 export const authGuard: CanActivateFn = async () => {
     if (!CoreSites.isLoggedIn()) {
-        return Router.parseUrl('/login');
+        return Router.parseUrl('/language');
+        // return Router.parseUrl('/login');
     }
 
     if (CoreLoginHelper.isSiteLoggedOut()) {
