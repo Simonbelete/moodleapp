@@ -101,13 +101,19 @@ export class CoreCoursesLinksHandlerBase extends CoreContentLinksHandlerBase {
      * Navigate course summary.
      *
      * @param courseId Course ID.
-     * @param pageParams Params to send to the new page.
+     * @param _pageParams Params to send to the new page.
      */
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected navigateCourseSummary(courseId: number, pageParams: Params): void {
+        // Allow guest access instead of summary
         CoreNavigator.navigateToSitePath(
-            `/course/${courseId}/summary`,
-            { params: pageParams },
+            `/course/${courseId}/contents`,
+            { params: { course: { id: courseId, isGuest: true, replace: true } } },
         );
+        // CoreNavigator.navigateToSitePath(
+        //     `/course/${courseId}/summary`,
+        //     { params: pageParams },
+        // );
     }
 
 }
