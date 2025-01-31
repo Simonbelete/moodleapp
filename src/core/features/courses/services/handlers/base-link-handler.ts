@@ -18,7 +18,7 @@ import { CoreCourseHelper } from '@features/course/services/course-helper';
 import { CoreCourses } from '../courses';
 import { Params } from '@angular/router';
 import { CoreUtils } from '@services/utils/utils';
-import { CoreNavigator } from '@services/navigator';
+// import { CoreNavigator } from '@services/navigator';
 import { CoreContentLinksAction } from '@features/contentlinks/services/contentlinks-delegate';
 import { CoreSites } from '@services/sites';
 import { CoreCourse } from '@features/course/services/course';
@@ -106,10 +106,7 @@ export class CoreCoursesLinksHandlerBase extends CoreContentLinksHandlerBase {
     // eslint-disable-next-line @typescript-eslint/no-unused-vars
     protected navigateCourseSummary(courseId: number, pageParams: Params): void {
         // Allow guest access instead of summary
-        CoreNavigator.navigateToSitePath(
-            `/course/${courseId}/contents`,
-            { params: { course: { id: courseId, isGuest: true, replace: true } } },
-        );
+        CoreCourseHelper.openCourse({ id: courseId }, { params: { isGuest: true }, replace: true });
         // CoreNavigator.navigateToSitePath(
         //     `/course/${courseId}/summary`,
         //     { params: pageParams },
