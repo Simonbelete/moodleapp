@@ -58,8 +58,10 @@
                             <ng-template *ngTemplateOutlet="allCourseList" />
                         </ng-container> -->
                         <ng-container *ngSwitchCase="'LIST_OF_CATEGORIES'">
-                            <ng-template *ngTemplateOutlet="categoriesCard" />
+                            <!-- <ng-template *ngTemplateOutlet="categoriesCard" /> -->
+                            <ng-template *ngTemplateOutlet="categoryCoursesList" />
                         </ng-container>
+
                         <!-- <ng-container *ngSwitchCase="'COURSE_SEARCH_BOX'">
                             <ng-template *ngTemplateOutlet="courseSearch" />
                         </ng-container>
@@ -122,6 +124,17 @@
                 </ion-badge>
             </ion-item>
         </ion-card>
+    </ng-container>
+</ng-template>
+
+<ng-template #categoryCoursesList>
+    <ng-container *ngIf="categoryCoursesLoaded && categoryCourses.length > 0">
+        <ion-item-divider>
+            <ion-label>
+                <h2 class="big">{{ 'core.courses.courses' | translate }}</h2>
+            </ion-label>
+        </ion-item-divider>
+        <core-courses-course-list-item *ngFor="let course of categoryCourses" [course]="course" />
     </ng-container>
 </ng-template>
 

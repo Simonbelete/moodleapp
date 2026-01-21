@@ -20,7 +20,7 @@ import { CoreCourse, CoreCourseWSSection, sectionContentIsModule } from '@featur
 import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSites } from '@services/sites';
 import { CoreSiteHome } from '@features/sitehome/services/sitehome';
-import { CoreCourses, CoreCategoryData, CoreCoursesProvider } from '@features//courses/services/courses';
+import { CoreCourses, CoreCategoryData, CoreCourseListItem, CoreCoursesProvider } from '@features//courses/services/courses';
 import { CoreEventObserver, CoreEvents } from '@singletons/events';
 import { CoreCourseHelper, CoreCourseModuleData } from '@features/course/services/course-helper';
 import { CoreCourseModuleDelegate } from '@features/course/services/module-delegate';
@@ -32,6 +32,7 @@ import { CoreTime } from '@singletons/time';
 import { CoreAnalytics, CoreAnalyticsEventType } from '@services/analytics';
 import { ContextLevel } from '@/core/constants';
 import { CoreModals } from '@services/modals';
+import { CoreLang } from '@services/lang';
 
 /**
  * Page that displays site home index.
@@ -44,6 +45,7 @@ import { CoreModals } from '@services/modals';
 export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
 
     showOnlyEnrolled = false;
+    showByLanguage = true;
     dataLoaded = false;
     section?: CoreCourseWSSection & {
         hasContent?: boolean;
@@ -60,13 +62,19 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
     categories: CoreCategoryData[] = [];
     categoriesLoaded = false;
     currentCategory?: CoreCategoryData;
+    categoryCourses: CoreCourseListItem[] = [];
+    categoryCoursesLoaded = false;
+    currentLanguage?: string;
 
     protected updateSiteObserver: CoreEventObserver;
     protected logView: () => void;
     protected myCoursesObserver: CoreEventObserver;
     protected categoryId = 0;
+    protected categoryCoursesId = 17;
+    protected allCategoryCourses: CoreCourseListItem[] = [];
 
     constructor(protected route: ActivatedRoute) {
+        this.asyncInit();
         this.myCoursesObserver = CoreEvents.on(
             CoreCoursesProvider.EVENT_MY_COURSES_UPDATED,
             (data) => {
@@ -95,6 +103,13 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
         });
     }
 
+    /*
+     * Async part of the constructor.
+     */
+    protected async asyncInit(): Promise<void> {
+        this.currentLanguage = await CoreLang.getCurrentLanguage();
+    }
+
     /**
      * @inheritdoc
      */
@@ -116,6 +131,10 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
 
         this.fetchCategories().finally(() => {
             this.categoriesLoaded = true;
+        });
+
+        this.fetchCategoryCourses().finally(() => {
+            this.categoryCoursesLoaded = true;
         });
 
         this.openFocusedInstance();
@@ -199,6 +218,7 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
         promises.push(CoreCourse.invalidateCourseBlocks(this.siteHomeId));
 
         promises.push(CoreCourses.invalidateCategories(this.categoryId, true));
+        promises.push(CoreCourses.invalidateCoursesByField('category', this.categoryCoursesId));
 
         if (this.section?.contents.length) {
             // Invalidate modules prefetch data.
@@ -211,6 +231,14 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
         Promise.all(promises).finally(async () => {
             await this.loadContent().finally(() => {
                 refresher?.complete();
+            });
+
+            await this.fetchCategories().finally(() => {
+                this.categoriesLoaded = true;
+            });
+
+            await this.fetchCategoryCourses().finally(() => {
+                this.categoryCoursesLoaded = true;
             });
         });
     }
@@ -303,6 +331,61 @@ export class CoreSiteHomeIndexPage implements OnInit, OnDestroy {
 
             this.logView();
         } catch (error) { /* empty */ }
+    }
+
+    /**
+     * Fetch courses for a fixed category to display on site home.
+     *
+     * @returns Promise resolved when done.
+     */
+    protected async fetchCategoryCourses(): Promise<void> {
+        try {
+            this.allCategoryCourses = await CoreCourses.getCoursesByField('category', this.categoryCoursesId);
+            await this.filterCategoryCoursesEnrolled();
+            await this.filterCategoryCoursesByLanguage();
+        } catch (error) {
+            this.categoryCourses = [];
+            this.allCategoryCourses = [];
+        }
+    }
+
+    /**
+     * Filter category courses by enrollment.
+     */
+    protected async filterCategoryCoursesEnrolled(): Promise<void> {
+        if (!this.showOnlyEnrolled) {
+            this.categoryCourses = this.allCategoryCourses;
+
+            return;
+        }
+
+        await Promise.all(this.allCategoryCourses.map(async (course) => {
+            const isEnrolled = course.progress !== undefined;
+
+            if (!isEnrolled) {
+                try {
+                    const userCourse = await CoreCourses.getUserCourse(course.id);
+                    course.progress = userCourse.progress;
+                    course.completionusertracked = userCourse.completionusertracked;
+                } catch {
+                    // Ignore errors.
+                }
+            }
+        }));
+
+        this.categoryCourses = this.allCategoryCourses.filter((course) => 'progress' in course);
+    }
+
+    /**
+     * Filter category courses by current selected language.
+     */
+    protected async filterCategoryCoursesByLanguage(): Promise<void> {
+        if (!this.showByLanguage) {
+            return;
+        }
+
+        this.categoryCourses = this.categoryCourses.filter((course) =>
+            course.lang ? course.lang == this.currentLanguage : true);
     }
 
     /**

@@ -72,6 +72,7 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
     siteCheckError = '';
     displaySiteUrl = false;
     showLoginForm = true;
+    canLoginAsGuest = false;
 
     protected siteCheck?: CoreSiteCheckResponse;
     protected eventThrown = false;
@@ -209,10 +210,12 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
      */
     protected async treatSiteConfig(): Promise<void> {
         this.showLoginForm = await CoreLoginHelper.shouldShowLoginForm(this.siteConfig);
+        this.canLoginAsGuest = !!this.siteConfig?.guestlogin;
 
         if (!this.siteConfig) {
             this.authInstructions = undefined;
             this.canSignup = false;
+            this.canLoginAsGuest = false;
 
             return;
         }
@@ -237,6 +240,49 @@ export class CoreLoginCredentialsPage implements OnInit, OnDestroy {
         if (!this.eventThrown && !this.viewLeft) {
             this.eventThrown = true;
             CoreEvents.trigger(CoreEvents.LOGIN_SITE_CHECKED, { config: this.siteConfig });
+        }
+    }
+
+    /**
+     * Login as a guest user if the site allows it.
+     *
+     * @param e Event.
+     * @returns Promise resolved when done.
+     */
+    async loginAsGuest(e?: Event): Promise<void> {
+        e?.preventDefault();
+        e?.stopPropagation();
+
+        CoreKeyboard.close();
+
+        const siteUrl = this.site.getURL();
+
+        if (!CoreNetwork.isOnline()) {
+            CoreDomUtils.showErrorModal('core.networkerrormsg', true);
+
+            return;
+        }
+
+        const modal = await CoreLoadings.show();
+
+        try {
+            const data = await CoreSites.getUserToken(siteUrl, 'guest1', 'guest1');
+
+            await CoreSites.newSite(data.siteUrl, data.token, data.privateToken);
+
+            await CoreNavigator.navigateToSiteHome({ params: { urlToOpen: this.urlToOpen } });
+        } catch (error) {
+            if (error instanceof CoreSiteError && CoreLoginHelper.isAppUnsupportedError(error)) {
+                await CoreLoginHelper.showAppUnsupportedModal(siteUrl, this.site, error.debug);
+            } else {
+                CoreLoginHelper.treatUserTokenError(siteUrl, error, 'guest', '');
+            }
+
+            if (error.loggedout) {
+                CoreNavigator.navigate('/login/sites', { reset: true });
+            }
+        } finally {
+            modal.dismiss();
         }
     }
 

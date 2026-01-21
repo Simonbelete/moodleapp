@@ -14,9 +14,6 @@
 
 import { Component } from '@angular/core';
 import { CoreLang } from '@services/lang';
-import { Translate } from '@singletons';
-import { AlertButton } from '@ionic/angular';
-import { CoreDomUtils } from '@services/utils/dom';
 import { CoreSites } from '@services/sites';
 import { CoreUtils } from '@services/utils/utils';
 import { CoreEvents } from '@singletons/events';
@@ -30,64 +27,64 @@ import { CoreConstants } from '@/core/constants';
 })
 export class CoreLanguagePreferencePage {
 
-	languages: { code: string; name: string }[] = [];
-	selectedLanguage = '';
+    languages: { code: string; name: string }[] = [];
+    selectedLanguage = '';
 
-	constructor() {
-	    this.asyncInit();
-	}
+    constructor() {
+        this.asyncInit();
+    }
 
-	/*
+    /*
      * Async part of the constructor.
      */
-	protected async asyncInit(): Promise<void> {
+    protected async asyncInit(): Promise<void> {
+        // Get the supported languages.
+        const languages = CoreConstants.CONFIG.languages;
+        for (const code in languages) {
+            this.languages.push({
+                code: code,
+                name: languages[code],
+            });
+        }
+        // Sort them by name.
+        this.languages.sort((a, b) => a.name.localeCompare(b.name));
+        this.selectedLanguage = await CoreLang.getCurrentLanguage();
+    }
 
-	    // Get the supported languages.
-	    const languages = CoreConstants.CONFIG.languages;
-	    for (const code in languages) {
-	        this.languages.push({
-	            code: code,
-	            name: languages[code],
-	        });
-	    }
-	    // Sort them by name.
-	    this.languages.sort((a, b) => a.name.localeCompare(b.name));
-	    this.selectedLanguage = await CoreLang.getCurrentLanguage();
-	}
-
-	 /**
+    /**
      * Called when a new language is selected.
      *
      * @param languageCode string
      */
-	 async languageChanged(languageCode: string): Promise<void> {
-		this.selectedLanguage = languageCode;
+    async languageChanged(languageCode: string): Promise<void> {
+        this.selectedLanguage = languageCode;
 
-		await CoreLang.changeCurrentLanguage(this.selectedLanguage);
+        await CoreLang.changeCurrentLanguage(this.selectedLanguage);
 
-		this.applyLanguageAndRestart();
+        this.applyLanguageAndRestart();
+    }
 
-	}
+    /**
+     * Apply language changes and restart the app.
+     */
+    protected async applyLanguageAndRestart(): Promise<void> {
+        // Invalidate cache for all sites to get the content in the right language.
+        const sites = await CoreSites.getSitesInstances();
+        await CoreUtils.ignoreErrors(
+            Promise.all(sites.map((site) => site.invalidateWsCache())),
+        );
 
-	/**
-	 * Apply language changes and restart the app.
-	 */
-	protected async applyLanguageAndRestart(): Promise<void> {
-	    // Invalidate cache for all sites to get the content in the right language.
-	    const sites = await CoreSites.getSitesInstances();
-	    await CoreUtils.ignoreErrors(Promise.all(sites.map((site) => site.invalidateWsCache())));
+        CoreEvents.trigger(CoreEvents.LANGUAGE_CHANGED, this.selectedLanguage);
 
-	    CoreEvents.trigger(CoreEvents.LANGUAGE_CHANGED, this.selectedLanguage);
+        CoreNavigator.navigate('/login', {
+            reset: true,
+        });
+    }
 
-	    CoreNavigator.navigate('/login', {
-	        reset: true,
-	    });
-	}
-
-	async getStartedClick(): Promise<void> {
-	    CoreNavigator.navigate('/login', {
-	        reset: true,
-	    });
-	}
+    async getStartedClick(): Promise<void> {
+        CoreNavigator.navigate('/login', {
+            reset: true,
+        });
+    }
 
 }
