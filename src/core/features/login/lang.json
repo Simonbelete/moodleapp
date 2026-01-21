@@ -89,6 +89,7 @@
     "passwordforgotten": "Forgotten password",
     "passwordforgotteninstructions2": "To reset your password, submit your username or your email address below. If we can find you in the database, an email will be sent to your email address, with instructions how to get access again.",
     "passwordrequired": "Password required",
+    "phonenumber": "Phone number",
     "potentialidps": "Log in using your account on:",
     "profileinvaliddata": "Invalid value",
     "recaptchachallengeimage": "reCAPTCHA challenge image",
@@ -127,6 +128,5 @@
     "visitchangepassword": "Do you want to visit the site to change the password?",
     "webservicesnotenabled": "Web services are not enabled on the site.",
     "youcanstillconnectwithcredentials": "You can still connect to the site by entering your username and password.",
-    "yourenteredsite": "Connect to your site",
-    "phonenumber": "Phone number"
+    "yourenteredsite": "Connect to your site"
 }
